@@ -42,3 +42,28 @@ export interface PatientRecord {
   readonly signedConsents: readonly ConsentTermItem[];
   readonly therapeuticPlan: TherapeuticPlanSummary;
 }
+
+export interface PacienteApiDto {
+  readonly idPaciente: string;
+  readonly nome: string;
+  readonly cpf: string;
+  readonly dataNascimento: string;
+  readonly email: string;
+  readonly telefone: string;
+  readonly contatoEmergenciaNome: string;
+  readonly contatoEmergenciaTelefone: string;
+  readonly enderecoLocalSessao: string;
+  readonly ativo: boolean;
+  readonly deletedAt: string | null;
+}
+
+export interface PacienteRequestDto {
+  readonly nome: string;
+  readonly cpf: string;
+  readonly dataNascimento: string;
+  readonly email: string;
+  readonly telefone: string;
+  readonly contatoEmergenciaNome: string;
+  readonly contatoEmergenciaTelefone: string;
+  readonly enderecoLocalSessao: string;
+}

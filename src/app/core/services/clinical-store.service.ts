@@ -14,6 +14,8 @@ import {
   FormalProntuarioRecord,
   NewAppointmentPayload,
   NewPaymentFormPayload,
+  PacienteApiDto,
+  PacienteRequestDto,
   PatientRecord,
   PaymentMethodKey,
   PaymentMethodOption,
@@ -138,6 +140,8 @@ export class ClinicalStoreService {
   });
 
   public readonly patientRecord = this.patientRecordState.asReadonly();
+  public readonly patientsList = signal<readonly PacienteApiDto[]>([]);
+  public readonly isCreatingNewPatient = signal<boolean>(false);
 
   // 3. Agenda Clínica State
   public readonly calendarViewMode = signal<CalendarViewMode>('semanal');
@@ -682,6 +686,218 @@ Relata melhora no padrão do sono (média de 6h30 ininterruptas), após adesão 
       ...patch,
       lastModifiedLabel: `Última alteração: Hoje, ${timeStr}`,
     }));
+  }
+
+  public loadPatientsFromBackend(): void {
+    this.http
+      .get<PacienteApiDto[]>(`${this.apiBaseUrl}/pacientes?incluirInativos=true`)
+      .pipe(catchError(() => of([])))
+      .subscribe((list) => {
+        if (list.length > 0) {
+          this.patientsList.set(list);
+          const currentId = this.patientRecordState().id;
+          const matching =
+            list.find((p) => p.idPaciente === currentId) ??
+            list.find((p) => p.cpf === this.patientRecordState().cpf) ??
+            list[0];
+          this.applyPacienteDto(matching);
+        }
+      });
+  }
+
+  public selectPatientById(idPaciente: string): void {
+    this.isCreatingNewPatient.set(false);
+    const found = this.patientsList().find((p) => p.idPaciente === idPaciente);
+    if (found) {
+      this.applyPacienteDto(found);
+      return;
+    }
+    this.http
+      .get<PacienteApiDto>(`${this.apiBaseUrl}/pacientes/${idPaciente}`)
+      .pipe(catchError(() => of(null)))
+      .subscribe((dto) => {
+        if (dto) {
+          this.applyPacienteDto(dto);
+        }
+      });
+  }
+
+  public startNewPatientRegistration(): void {
+    this.isCreatingNewPatient.set(true);
+    this.patientRecordState.update((prev) => ({
+      ...prev,
+      id: '',
+      prontuarioCode: '#NOVO',
+      fullName: '',
+      shortName: 'Novo Paciente',
+      initials: 'NP',
+      cpf: '',
+      maskedCpf: '***.***.***-**',
+      birthDate: '',
+      ageYears: 0,
+      phone: '',
+      email: '',
+      activeInPsychotherapy: true,
+      emergencyProtocol: {
+        ...prev.emergencyProtocol,
+        emergencyContactName: '',
+        emergencyContactPhone: '',
+        habitualSessionAddress: '',
+      },
+    }));
+  }
+
+  public savePatientToBackend(inputData: {
+    fullName: string;
+    cpf: string;
+    birthDate: string;
+    phone: string;
+    email: string;
+    emergencyContactName: string;
+    emergencyContactPhone: string;
+    habitualSessionAddress: string;
+  }): Observable<PatientRecord> {
+    const isoDate = ClinicalStoreService.parseBirthDateToIso(inputData.birthDate);
+    const payload: PacienteRequestDto = {
+      nome: inputData.fullName.trim(),
+      cpf: inputData.cpf.trim(),
+      dataNascimento: isoDate,
+      email: inputData.email.trim(),
+      telefone: inputData.phone.trim(),
+      contatoEmergenciaNome: inputData.emergencyContactName.trim(),
+      contatoEmergenciaTelefone: inputData.emergencyContactPhone.trim(),
+      enderecoLocalSessao: inputData.habitualSessionAddress.trim(),
+    };
+
+    const currentId = this.patientRecordState().id;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      currentId
+    );
+    const isNew = this.isCreatingNewPatient() || !isUuid;
+
+    const request$ = isNew
+      ? this.http.post<PacienteApiDto>(`${this.apiBaseUrl}/pacientes`, payload)
+      : this.http.put<PacienteApiDto>(`${this.apiBaseUrl}/pacientes/${currentId}`, payload);
+
+    return request$.pipe(
+      tap((dto) => {
+        this.isCreatingNewPatient.set(false);
+        this.applyPacienteDto(dto);
+        this.patientsList.update((list) => {
+          const exists = list.some((item) => item.idPaciente === dto.idPaciente);
+          if (exists) {
+            return list.map((item) => (item.idPaciente === dto.idPaciente ? dto : item));
+          }
+          return [dto, ...list];
+        });
+      }),
+      map(() => this.patientRecordState())
+    );
+  }
+
+  public togglePatientStatusOnBackend(active: boolean): Observable<PatientRecord> {
+    const currentId = this.patientRecordState().id;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      currentId
+    );
+    if (!isUuid) {
+      this.togglePatientActiveStatus(active);
+      return of(this.patientRecordState());
+    }
+    return this.http
+      .patch<PacienteApiDto>(
+        `${this.apiBaseUrl}/pacientes/${currentId}/status?ativo=${active}`,
+        {}
+      )
+      .pipe(
+        tap((dto) => {
+          this.applyPacienteDto(dto);
+          this.patientsList.update((list) =>
+            list.map((item) => (item.idPaciente === dto.idPaciente ? dto : item))
+          );
+        }),
+        map(() => this.patientRecordState())
+      );
+  }
+
+  private applyPacienteDto(dto: PacienteApiDto): void {
+    const words = dto.nome.trim().split(/\s+/);
+    const initials =
+      words.length >= 2
+        ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
+        : dto.nome.slice(0, 2).toUpperCase();
+    const shortName =
+      words.length >= 2 ? `${words[0]} ${words[words.length - 1]}` : dto.nome;
+    const maskedCpf =
+      dto.cpf.length >= 11 ? `${dto.cpf.slice(0, 3)}.***.***-${dto.cpf.slice(-2)}` : dto.cpf;
+    const { formattedLabel, ageYears } = ClinicalStoreService.formatIsoBirthDate(
+      dto.dataNascimento
+    );
+    const shortCode = `#${dto.idPaciente.slice(0, 4).toUpperCase()}`;
+
+    this.patientRecordState.update((prev) => ({
+      ...prev,
+      id: dto.idPaciente,
+      prontuarioCode: shortCode,
+      fullName: dto.nome,
+      shortName,
+      initials,
+      cpf: dto.cpf,
+      maskedCpf,
+      birthDate: formattedLabel,
+      ageYears,
+      phone: dto.telefone,
+      email: dto.email,
+      activeInPsychotherapy: dto.ativo,
+      emergencyProtocol: {
+        ...prev.emergencyProtocol,
+        emergencyContactName: dto.contatoEmergenciaNome,
+        emergencyContactPhone: dto.contatoEmergenciaTelefone,
+        habitualSessionAddress: dto.enderecoLocalSessao,
+      },
+    }));
+
+    this.privacyPortalState.update((prev) => ({
+      ...prev,
+      searchQuery: `${dto.nome} - ${dto.cpf}`,
+      targetPatientName: dto.nome,
+      targetPatientShortName: shortName,
+      targetPatientCpf: dto.cpf,
+      prontuarioStatusBadge: dto.ativo ? 'Prontuário Ativo' : 'Prontuário Inativo',
+    }));
+  }
+
+  public static parseBirthDateToIso(raw: string): string {
+    const trimmed = raw.trim();
+    const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+    }
+    const brMatch = trimmed.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if (brMatch) {
+      return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+    }
+    return '1992-05-14';
+  }
+
+  public static formatIsoBirthDate(iso: string): { formattedLabel: string; ageYears: number } {
+    const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) {
+      return { formattedLabel: iso, ageYears: 30 };
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const today = new Date();
+    let age = today.getFullYear() - year;
+    const m = today.getMonth() + 1 - month;
+    if (m < 0 || (m === 0 && today.getDate() < day)) {
+      age--;
+    }
+    return {
+      formattedLabel: `${match[3]}/${match[2]}/${match[1]} - ${age} anos`,
+      ageYears: Math.max(0, age),
+    };
   }
 
   public updatePatientRecord(

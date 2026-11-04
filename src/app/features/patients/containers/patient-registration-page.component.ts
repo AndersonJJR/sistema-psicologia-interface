@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 import { ClinicalStoreService } from '../../../core/services/clinical-store.service';
 import { LayoutService } from '../../../core/services/layout.service';
 import { PatientSettingsSummaryComponent } from '../components/patient-settings-summary/patient-settings-summary.component';
@@ -51,8 +52,23 @@ export interface PatientRegistrationFormControls {
               <span
                 class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-semibold"
               >
-                Prontuário Digital&nbsp;
+                Prontuário Digital&nbsp;{{ store.patientRecord().prontuarioCode }}
               </span>
+              @if (store.patientsList().length > 0) {
+                <select
+                  aria-label="Selecionar paciente cadastrado"
+                  [value]="store.isCreatingNewPatient() ? '' : store.patientRecord().id"
+                  (change)="onSelectPatient($event)"
+                  class="ml-2 h-7 px-2 rounded-md bg-surface-container-low text-on-surface text-label-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  @if (store.isCreatingNewPatient()) {
+                    <option value="">-- Novo Cadastro --</option>
+                  }
+                  @for (p of store.patientsList(); track p.idPaciente) {
+                    <option [value]="p.idPaciente">{{ p.nome }} ({{ p.cpf }})</option>
+                  }
+                </select>
+              }
             </div>
             <h1 class="font-headline-lg text-headline-lg text-on-surface truncate">
               Cadastro e Prontuário de Paciente
@@ -62,7 +78,15 @@ export interface PatientRegistrationFormControls {
             </p>
           </div>
         </div>
-        <div class="flex items-center gap-space-sm shrink-0">
+        <div class="flex items-center gap-space-sm shrink-0 flex-wrap">
+          <button
+            type="button"
+            (click)="onNewPatient()"
+            class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors shadow-sm font-label-lg text-label-lg cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-[20px]">person_add</span>
+            Novo Paciente
+          </button>
           <button
             type="button"
             (click)="onPrintRecord()"
@@ -107,7 +131,7 @@ export interface PatientRegistrationFormControls {
     </div>
   `,
 })
-export class PatientRegistrationPageComponent {
+export class PatientRegistrationPageComponent implements OnInit {
   public readonly store = inject(ClinicalStoreService);
   private readonly layout = inject(LayoutService);
 
@@ -157,8 +181,60 @@ export class PatientRegistrationPageComponent {
     ),
   });
 
+  constructor() {
+    effect(() => {
+      const record = this.store.patientRecord();
+      this.patientForm.patchValue(
+        {
+          fullName: record.fullName,
+          cpf: record.cpf,
+          birthDate: record.birthDate,
+          phone: record.phone,
+          email: record.email,
+          emergencyContactName: record.emergencyProtocol.emergencyContactName,
+          emergencyContactPhone: record.emergencyProtocol.emergencyContactPhone,
+          habitualSessionAddress: record.emergencyProtocol.habitualSessionAddress,
+        },
+        { emitEvent: false }
+      );
+    });
+  }
+
+  public ngOnInit(): void {
+    this.store.loadPatientsFromBackend();
+  }
+
+  public onSelectPatient(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    if (select.value) {
+      this.store.selectPatientById(select.value);
+    }
+  }
+
+  public onNewPatient(): void {
+    this.store.startNewPatientRegistration();
+    this.patientForm.markAsPristine();
+    this.patientForm.markAsUntouched();
+  }
+
   public onStatusChanged(active: boolean): void {
-    this.store.togglePatientActiveStatus(active);
+    this.store.togglePatientStatusOnBackend(active).subscribe({
+      next: () => {
+        this.layout.showToast(
+          active ? 'Paciente Reativado' : 'Status Atualizado',
+          active
+            ? 'Prontuário reativado para acompanhamento psicoterapêutico.'
+            : 'Paciente marcado como inativo/alta temporária (retenção legal preservada).'
+        );
+      },
+      error: (err: unknown) => {
+        this.layout.showToast(
+          'Erro ao Alterar Status',
+          AuthService.extractErrorMessage(err, 'Não foi possível atualizar o status do paciente.'),
+          'error'
+        );
+      },
+    });
   }
 
   public onPrintRecord(): void {
@@ -179,24 +255,20 @@ export class PatientRegistrationPageComponent {
     }
 
     const raw = this.patientForm.getRawValue();
-    this.store.updatePatientRecord(
-      {
-        fullName: raw.fullName,
-        cpf: raw.cpf,
-        birthDate: raw.birthDate,
-        phone: raw.phone,
-        email: raw.email,
+    this.store.savePatientToBackend(raw).subscribe({
+      next: () => {
+        this.layout.showToast(
+          'Prontuário Atualizado com Sucesso',
+          'Dados criptografados e salvos no banco de dados com trilha de auditoria CFP ativa.'
+        );
       },
-      {
-        emergencyContactName: raw.emergencyContactName,
-        emergencyContactPhone: raw.emergencyContactPhone,
-        habitualSessionAddress: raw.habitualSessionAddress,
-      }
-    );
-
-    this.layout.showToast(
-      'Prontuário Atualizado com Sucesso',
-      'Dados criptografados e salvos com trilha de auditoria CFP ativa.'
-    );
+      error: (err: unknown) => {
+        this.layout.showToast(
+          'Erro ao Salvar Paciente',
+          AuthService.extractErrorMessage(err, 'Falha ao salvar o cadastro do paciente.'),
+          'error'
+        );
+      },
+    });
   }
 }

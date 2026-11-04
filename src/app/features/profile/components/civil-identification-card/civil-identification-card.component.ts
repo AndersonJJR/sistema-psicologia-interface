@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ProfileFormControls } from '../../containers/profile-page.component';
 
@@ -43,14 +43,6 @@ import { ProfileFormControls } from '../../containers/profile-page.component';
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          (click)="photoChangeRequested.emit()"
-          class="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-lg bg-surface-container-low px-space-md py-2 font-label-md text-label-md text-primary font-semibold hover:bg-surface-container transition-colors cursor-pointer"
-        >
-          <span class="material-symbols-outlined text-[16px]">upload_file</span>
-          Alterar Foto Oficial
-        </button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
@@ -154,7 +146,6 @@ export class CivilIdentificationCardComponent {
   public readonly formGroup = input.required<FormGroup<ProfileFormControls>>();
   public readonly avatarUrl = input.required<string>();
   public readonly cpfValidatedLabel = input.required<string>();
-  public readonly photoChangeRequested = output<void>();
 
   public isInvalid(field: keyof ProfileFormControls): boolean {
     const control = this.formGroup().controls[field];

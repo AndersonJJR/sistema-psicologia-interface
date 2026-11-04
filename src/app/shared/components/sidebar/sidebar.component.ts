@@ -30,7 +30,6 @@ import { SidebarNavItem } from '../../../core/models';
               </span>
             </div>
           </div>
-          <div class="px-space-md py-space-xs"></div>
         } @else if (compact16()) {
           <div class="flex flex-col items-center gap-space-md w-full">
             <div class="h-10 flex items-center justify-center">
@@ -51,7 +50,6 @@ import { SidebarNavItem } from '../../../core/models';
               title="PsicoSafe Clínica & Telepsi"
             />
           </div>
-          <div class="px-space-xs py-1 flex justify-center"></div>
         }
 
         <!-- Navigation Links -->
@@ -217,19 +215,6 @@ import { SidebarNavItem } from '../../../core/models';
             </div>
           </div>
         }
-      } @else if (collapsed() && compact16()) {
-        <div class="flex flex-col items-center gap-space-xs w-full">
-          <button
-            type="button"
-            title="Ajuda e Suporte"
-            (click)="helpRequested.emit()"
-            class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all cursor-pointer"
-          >
-            <span class="material-symbols-outlined text-[20px]">help_outline</span>
-          </button>
-        </div>
-      } @else {
-        <div class="p-space-md"></div>
       }
     </aside>
   `,
@@ -248,7 +233,6 @@ export class SidebarComponent {
   public readonly toggleSidebar = output<void>();
   public readonly saveProfile = output<void>();
   public readonly renewEpsi = output<void>();
-  public readonly helpRequested = output<void>();
 
   public readonly asideClasses = computed<string>(() => {
     const base =

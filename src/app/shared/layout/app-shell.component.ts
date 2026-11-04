@@ -27,7 +27,6 @@ import { ToastNotificationComponent } from '../components/toast/toast-notificati
       (toggleSidebar)="layout.toggleSidebar()"
       (saveProfile)="layout.requestProfileSave()"
       (renewEpsi)="layout.requestEpsiRenew()"
-      (helpRequested)="onHelpRequested()"
     />
 
     <div [class]="contentWrapperClasses()">
@@ -79,13 +78,5 @@ export class AppShellComponent {
       .subscribe((event) => {
         this.layout.setActiveRoutePath(event.urlAfterRedirects);
       });
-  }
-
-  public onHelpRequested(): void {
-    this.layout.showToast(
-      'Suporte Clínico & DPO PsicoSafe',
-      'Canal direto de conformidade CFP e LGPD disponível em horário comercial.',
-      'support_agent'
-    );
   }
 }

@@ -22,6 +22,8 @@ export interface TelepsychologyRoomConfig {
 }
 
 export interface PsychologistProfile {
+  readonly id?: string;
+  readonly email?: string;
   readonly fullName: string;
   readonly shortDisplayName: string;
   readonly cpf: string;
@@ -38,4 +40,28 @@ export interface PsychologistProfile {
   readonly clinicalApproach: ClinicalApproachKey;
   readonly lastModifiedLabel: string;
   readonly telepsychologyConfig: TelepsychologyRoomConfig;
+}
+
+export interface PsicologoApiDto {
+  readonly idPsicologo: string;
+  readonly nome: string;
+  readonly cpf: string;
+  readonly crp: string;
+  readonly numeroEpsi: string;
+  readonly email: string;
+  readonly telefone: string;
+  readonly abordagemClinica: ClinicalApproachKey;
+  readonly ultimaRenovacaoEpsi: string | null;
+  readonly ativo: boolean;
+  readonly deletedAt: string | null;
+}
+
+export interface PsicologoRequestDto {
+  readonly nome: string;
+  readonly cpf: string;
+  readonly crp: string;
+  readonly numeroEpsi: string;
+  readonly email: string;
+  readonly telefone: string;
+  readonly abordagemClinica?: ClinicalApproachKey;
 }

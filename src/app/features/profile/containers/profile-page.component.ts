@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClinicalApproachKey } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
 import { ClinicalStoreService } from '../../../core/services/clinical-store.service';
 import { LayoutService } from '../../../core/services/layout.service';
 import { CivilIdentificationCardComponent } from '../components/civil-identification-card/civil-identification-card.component';
@@ -55,26 +56,16 @@ export interface ProfileFormControls {
               eletrônicos válidos.
             </p>
           </div>
-          @if (!layout.isSidebarCollapsed()) {
-            <div class="flex items-center gap-space-sm self-start md:self-auto shrink-0">
-              <div
-                class="flex items-center gap-space-xs rounded-lg bg-surface-container-low px-space-md py-space-sm shadow-sm"
-              >
-                <div class="flex flex-col"></div>
-              </div>
-            </div>
-          }
         </div>
       </div>
 
-      <!-- Layout Principal em Grid Asimétrico -->
+      <!-- Layout Principal em Grid -->
       <div class="grid grid-cols-1 gap-space-lg items-start">
         <div class="space-y-space-lg w-full">
           <app-civil-identification-card
             [formGroup]="profileForm"
             [avatarUrl]="store.profile().avatarUrl"
             [cpfValidatedLabel]="store.profile().cpfValidatedLabel"
-            (photoChangeRequested)="onChangePhoto()"
           />
 
           <app-epsi-credential-card
@@ -94,7 +85,7 @@ export interface ProfileFormControls {
     </div>
   `,
 })
-export class ProfilePageComponent {
+export class ProfilePageComponent implements OnInit {
   public readonly store = inject(ClinicalStoreService);
   public readonly layout = inject(LayoutService);
 
@@ -126,6 +117,20 @@ export class ProfilePageComponent {
 
   constructor() {
     effect(() => {
+      const current = this.store.profile();
+      this.profileForm.patchValue(
+        {
+          fullName: current.fullName,
+          cpf: current.cpf,
+          phone: current.phone,
+          crpRegistration: current.crpRegistration,
+          clinicalApproach: current.clinicalApproach,
+        },
+        { emitEvent: false }
+      );
+    });
+
+    effect(() => {
       const saveCount = this.layout.profileSaveTrigger();
       if (saveCount !== this.lastSaveTriggerCount) {
         this.lastSaveTriggerCount = saveCount;
@@ -142,12 +147,8 @@ export class ProfilePageComponent {
     });
   }
 
-  public onChangePhoto(): void {
-    this.layout.showToast(
-      'Foto Oficial CNES / CFP',
-      'Validação biométrica da foto oficial concluída com sucesso.',
-      'photo_camera'
-    );
+  public ngOnInit(): void {
+    this.store.loadProfileFromBackend();
   }
 
   public handleSaveProfile(): void {
@@ -164,29 +165,50 @@ export class ProfilePageComponent {
     this.layout.setProfileSaving(true);
     const values = this.profileForm.getRawValue();
 
-    setTimeout(() => {
-      this.store.updateProfile({
+    this.store
+      .saveProfileToBackend({
         fullName: values.fullName,
         phone: values.phone,
         crpRegistration: values.crpRegistration,
         clinicalApproach: values.clinicalApproach,
+      })
+      .subscribe({
+        next: () => {
+          this.layout.setProfileSaving(false);
+          this.layout.showToast(
+            'Perfil Atualizado com Sucesso',
+            'Registro profissional e parâmetros éticos salvos no banco de dados com trilha de auditoria.'
+          );
+        },
+        error: (err: unknown) => {
+          this.layout.setProfileSaving(false);
+          this.layout.showToast(
+            'Erro ao Salvar Perfil',
+            AuthService.extractErrorMessage(err, 'Falha na comunicação com o servidor.'),
+            'error'
+          );
+        },
       });
-      this.layout.setProfileSaving(false);
-      this.layout.showToast(
-        'Perfil Atualizado com Sucesso',
-        'Registro profissional e parâmetros éticos salvos com carimbo de tempo.'
-      );
-    }, 600);
   }
 
   public handleRenewEpsi(): void {
     this.layout.setEpsiRenewing(true);
-    setTimeout(() => {
-      this.layout.setEpsiRenewing(false);
-      this.layout.showToast(
-        'e-Psi Sincronizado',
-        'Chave criptográfica e autorização e-Psi renovadas junto ao Conselho Regional.'
-      );
-    }, 800);
+    this.store.renewEpsiCertificateOnBackend().subscribe({
+      next: () => {
+        this.layout.setEpsiRenewing(false);
+        this.layout.showToast(
+          'e-Psi Sincronizado',
+          'Chave criptográfica e autorização e-Psi renovadas e auditadas junto ao Conselho Regional.'
+        );
+      },
+      error: (err: unknown) => {
+        this.layout.setEpsiRenewing(false);
+        this.layout.showToast(
+          'Falha ao Renovar e-Psi',
+          AuthService.extractErrorMessage(err, 'Não foi possível renovar o certificado e-Psi.'),
+          'error'
+        );
+      },
+    });
   }
 }

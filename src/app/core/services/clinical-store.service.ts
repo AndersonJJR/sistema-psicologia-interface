@@ -1,4 +1,6 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
 import {
   ActiveBillingConciliation,
   AgendaMetricCard,
@@ -6,6 +8,7 @@ import {
   BillingFilterType,
   CalendarDayColumn,
   CalendarViewMode,
+  ClinicalApproachKey,
   ClinicalApproachOption,
   ClinicalSessionData,
   FormalProntuarioRecord,
@@ -17,14 +20,21 @@ import {
   PortabilityFormatCard,
   PrivacyPortalState,
   PrivateDocumentalRecord,
+  PsicologoApiDto,
+  PsicologoRequestDto,
   PsychologistProfile,
   ScheduleSlotItem,
 } from '../models';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ClinicalStoreService {
+  private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
+  private readonly apiBaseUrl = 'http://localhost:8080/api/v1';
+
   public readonly logoUrl =
     'https://lh3.googleusercontent.com/aida-public/AB6AXuAZyGG8_keFvdbYHxmLHVJlOY7iSyhwaHESWh1SvZnwKBiM0Sde8ypk75wN7vDApF-oZ2jVh6t03LiJTx5xfyp9suSjf1IQ4UYmrfqFA4xg9KazkipPgPEVAg-4j_LZIzLLqNCPhpfo19RO490GcAVbod3LN_JGvD3vcCuWIrKbWDllTtAhGIrU4ReoxVR1a6yhtidj7LVIuVDYPN3lVJG1EdV6UlExQ8Mw2jDEB6DN';
 
@@ -532,6 +542,134 @@ Relata melhora no padrão do sono (média de 6h30 ininterruptas), após adesão 
   ]);
 
   // Actions & Mutations
+  public loadProfileFromBackend(): void {
+    const userId = this.authService.currentPsychologistId() ?? this.profileState().id;
+    const req$ = userId
+      ? this.http.get<PsicologoApiDto>(`${this.apiBaseUrl}/psicologos/${userId}`)
+      : this.http.get<PsicologoApiDto[]>(`${this.apiBaseUrl}/psicologos`).pipe(
+          map((list) => list[0] ?? null)
+        );
+
+    req$.pipe(catchError(() => of(null))).subscribe((dto) => {
+      if (dto) {
+        this.applyPsicologoDto(dto);
+      }
+    });
+  }
+
+  public saveProfileToBackend(
+    patch: Pick<PsychologistProfile, 'fullName' | 'phone' | 'crpRegistration' | 'clinicalApproach'>
+  ): Observable<PsychologistProfile> {
+    const current = this.profileState();
+    const idPsicologo = this.authService.currentPsychologistId() ?? current.id;
+    const payload: PsicologoRequestDto = {
+      nome: patch.fullName.trim(),
+      cpf: current.cpf,
+      crp: patch.crpRegistration.trim(),
+      numeroEpsi: current.ePsiCode,
+      email: current.email ?? this.authService.session()?.login ?? 'dra.juliana@psicosafe.com.br',
+      telefone: patch.phone.trim(),
+      abordagemClinica: patch.clinicalApproach,
+    };
+
+    const resolveId$ = idPsicologo
+      ? of(idPsicologo)
+      : this.http.get<PsicologoApiDto[]>(`${this.apiBaseUrl}/psicologos`).pipe(
+          map((list) => list[0]?.idPsicologo ?? null),
+          catchError(() => of(null))
+        );
+
+    return resolveId$.pipe(
+      switchMap((id) => {
+        if (!id) {
+          this.updateProfile(patch);
+          return of(this.profileState());
+        }
+        return this.http.put<PsicologoApiDto>(`${this.apiBaseUrl}/psicologos/${id}`, payload).pipe(
+          tap((dto) => this.applyPsicologoDto(dto)),
+          map(() => this.profileState())
+        );
+      })
+    );
+  }
+
+  public renewEpsiCertificateOnBackend(): Observable<PsychologistProfile> {
+    const current = this.profileState();
+    const idPsicologo = this.authService.currentPsychologistId() ?? current.id;
+
+    const resolveId$ = idPsicologo
+      ? of(idPsicologo)
+      : this.http.get<PsicologoApiDto[]>(`${this.apiBaseUrl}/psicologos`).pipe(
+          map((list) => list[0]?.idPsicologo ?? null),
+          catchError(() => of(null))
+        );
+
+    return resolveId$.pipe(
+      switchMap((id) => {
+        if (!id) {
+          const now = new Date();
+          const dateStr = now.toLocaleDateString('pt-BR');
+          this.profileState.update((prev) => ({
+            ...prev,
+            ePsiAuditBadge: `Renovado em ${dateStr}`,
+            lastModifiedLabel: `Certificado e-Psi renovado em ${dateStr}`,
+          }));
+          return of(this.profileState());
+        }
+        return this.http
+          .patch<PsicologoApiDto>(`${this.apiBaseUrl}/psicologos/${id}/renovar-epsi`, {})
+          .pipe(
+            tap((dto) => this.applyPsicologoDto(dto)),
+            map(() => this.profileState())
+          );
+      })
+    );
+  }
+
+  private applyPsicologoDto(dto: PsicologoApiDto): void {
+    const words = dto.nome.trim().split(/\s+/);
+    const shortDisplayName =
+      words.length > 2 ? `${words[0]} ${words[1]} ${words[words.length - 1]}` : dto.nome;
+    const slug = dto.nome
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const approach = (dto.abordagemClinica || 'tcc') as ClinicalApproachKey;
+    const renovacaoDate = dto.ultimaRenovacaoEpsi
+      ? new Date(dto.ultimaRenovacaoEpsi).toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : null;
+
+    this.profileState.update((prev) => ({
+      ...prev,
+      id: dto.idPsicologo,
+      email: dto.email,
+      fullName: dto.nome,
+      shortDisplayName,
+      cpf: dto.cpf,
+      phone: dto.telefone,
+      ePsiCode: dto.numeroEpsi,
+      ePsiAuditBadge: renovacaoDate ? `Renovado em ${renovacaoDate}` : prev.ePsiAuditBadge,
+      crpRegistration: dto.crp,
+      crpActiveStatus: dto.ativo ? 'Ativo e Regular' : 'Inativo',
+      clinicalApproach: approach,
+      lastModifiedLabel: renovacaoDate
+        ? `Última sincronização e-Psi: ${renovacaoDate}`
+        : `Sincronizado com servidor CFP`,
+      telepsychologyConfig: {
+        ...prev.telepsychologyConfig,
+        permanentRoomLink: `psicosafe.com.br/sala/${slug}`,
+      },
+    }));
+  }
+
   public updateProfile(
     patch: Partial<
       Pick<PsychologistProfile, 'fullName' | 'phone' | 'crpRegistration' | 'clinicalApproach'>

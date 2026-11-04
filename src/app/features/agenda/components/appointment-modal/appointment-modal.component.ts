@@ -1,9 +1,14 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CalendarDayColumn, NewAppointmentPayload } from '../../../../core/models';
+import {
+  CalendarDayColumn,
+  NewAppointmentPayload,
+  PacienteApiDto,
+} from '../../../../core/models';
 import { ModalShellComponent } from '../../../../shared/components/modal/modal-shell.component';
 
 interface AppointmentFormControls {
+  patientId: FormControl<string>;
   patientName: FormControl<string>;
   dayIndex: FormControl<number>;
   hourSlot: FormControl<string>;
@@ -26,6 +31,25 @@ interface AppointmentFormControls {
       (closed)="closed.emit()"
     >
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-space-md" novalidate>
+        @if (patients().length > 0) {
+          <div class="flex flex-col gap-1">
+            <label for="appt-patient-select" class="font-label-md text-label-md text-on-surface">
+              Paciente Cadastrado *
+            </label>
+            <select
+              id="appt-patient-select"
+              formControlName="patientId"
+              (change)="onPatientSelected()"
+              class="w-full h-11 px-space-md rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">-- Selecione um paciente --</option>
+              @for (p of patients(); track p.idPaciente) {
+                <option [value]="p.idPaciente">{{ p.nome }} ({{ p.cpf }})</option>
+              }
+            </select>
+          </div>
+        }
+
         <div class="flex flex-col gap-1">
           <label for="appt-patient" class="font-label-md text-label-md text-on-surface">
             Nome do Paciente *
@@ -130,6 +154,7 @@ interface AppointmentFormControls {
 export class AppointmentModalComponent {
   public readonly isOpen = input.required<boolean>();
   public readonly days = input.required<readonly CalendarDayColumn[]>();
+  public readonly patients = input<readonly PacienteApiDto[]>([]);
   public readonly closed = output<void>();
   public readonly appointmentCreated = output<NewAppointmentPayload>();
 
@@ -145,6 +170,7 @@ export class AppointmentModalComponent {
   ];
 
   public readonly form = new FormGroup<AppointmentFormControls>({
+    patientId: new FormControl<string>('', { nonNullable: true }),
     patientName: new FormControl<string>('', {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(3)],
@@ -164,6 +190,14 @@ export class AppointmentModalComponent {
     roomOrNotes: new FormControl<string>('Sala 1', { nonNullable: true }),
   });
 
+  public onPatientSelected(): void {
+    const selectedId = this.form.controls.patientId.value;
+    const found = this.patients().find((p) => p.idPaciente === selectedId);
+    if (found) {
+      this.form.controls.patientName.setValue(found.nome);
+    }
+  }
+
   public onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -173,6 +207,7 @@ export class AppointmentModalComponent {
     const raw = this.form.getRawValue();
     const hourPrefix = raw.hourSlot.slice(0, 2);
     this.appointmentCreated.emit({
+      patientId: raw.patientId || undefined,
       patientName: raw.patientName,
       dayIndex: raw.dayIndex,
       hourSlot: raw.hourSlot,
@@ -181,6 +216,7 @@ export class AppointmentModalComponent {
       roomOrNotes: raw.roomOrNotes,
     });
     this.form.reset({
+      patientId: '',
       patientName: '',
       dayIndex: 3,
       hourSlot: '16:00',

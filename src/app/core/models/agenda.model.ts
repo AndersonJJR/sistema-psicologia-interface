@@ -13,6 +13,8 @@ export type AppointmentVariant =
 
 export interface ScheduleSlotItem {
   readonly id: string;
+  readonly agendamentoId?: string;
+  readonly patientId?: string;
   readonly dayIndex: number; // 0 = Seg, 1 = Ter, 2 = Qua, 3 = Qui, 4 = Sex
   readonly hourSlot: string;
   readonly timeRange?: string;
@@ -39,10 +41,40 @@ export interface AgendaMetricCard {
 }
 
 export interface NewAppointmentPayload {
+  readonly patientId?: string;
   readonly patientName: string;
   readonly dayIndex: number;
   readonly hourSlot: string;
   readonly timeRange: string;
   readonly modality: 'Telessaúde' | 'Presencial';
   readonly roomOrNotes: string;
+}
+
+export type ModalidadeAtendimentoApi = 'PRESENCIAL' | 'TELECONSULTA';
+export type StatusAgendamentoApi = 'AGENDADO' | 'REALIZADO' | 'CANCELADO' | 'FALTA';
+
+export interface AgendamentoApiDto {
+  readonly idAgendamento: string;
+  readonly idPsicologo: string;
+  readonly nomePsicologo: string;
+  readonly numeroEpsiPsicologo: string;
+  readonly idPaciente: string;
+  readonly nomePaciente: string;
+  readonly contatoEmergenciaNome: string;
+  readonly contatoEmergenciaTelefone: string;
+  readonly dataHoraSessao: string;
+  readonly modalidade: ModalidadeAtendimentoApi;
+  readonly status: StatusAgendamentoApi;
+  readonly enderecoLocalSessao: string;
+  readonly ativo: boolean;
+  readonly deletedAt: string | null;
+}
+
+export interface AgendamentoRequestDto {
+  readonly idPsicologo: string;
+  readonly idPaciente: string;
+  readonly dataHoraSessao: string;
+  readonly modalidade: ModalidadeAtendimentoApi;
+  readonly status?: StatusAgendamentoApi;
+  readonly enderecoLocalSessao?: string;
 }

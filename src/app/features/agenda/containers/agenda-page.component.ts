@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   CalendarViewMode,
   NewAppointmentPayload,
   ScheduleSlotItem,
 } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
 import { ClinicalStoreService } from '../../../core/services/clinical-store.service';
 import { LayoutService } from '../../../core/services/layout.service';
 import { AgendaMetricsBarComponent } from '../components/agenda-metrics-bar/agenda-metrics-bar.component';
@@ -125,18 +126,23 @@ import { TimetableGridComponent } from '../components/timetable-grid/timetable-g
       <app-appointment-modal
         [isOpen]="isModalOpen()"
         [days]="store.agendaDays()"
+        [patients]="store.patientsList()"
         (closed)="closeAppointmentModal()"
         (appointmentCreated)="onAppointmentCreated($event)"
       />
     </div>
   `,
 })
-export class AgendaPageComponent {
+export class AgendaPageComponent implements OnInit {
   public readonly store = inject(ClinicalStoreService);
   private readonly layout = inject(LayoutService);
   private readonly router = inject(Router);
 
   public readonly isModalOpen = signal<boolean>(false);
+
+  public ngOnInit(): void {
+    this.store.loadAgendamentosFromBackend();
+  }
 
   public viewButtonClasses(mode: CalendarViewMode): string {
     if (this.store.calendarViewMode() === mode) {
@@ -171,16 +177,27 @@ export class AgendaPageComponent {
   }
 
   public onAppointmentCreated(payload: NewAppointmentPayload): void {
-    this.store.addScheduleSlot(payload);
-    this.isModalOpen.set(false);
-    this.layout.showToast(
-      'Horário Clínico Agendado',
-      `Sessão de ${payload.patientName} reservada às ${payload.hourSlot} (${payload.modality}).`
-    );
+    this.store.createAppointmentOnBackend(payload).subscribe({
+      next: () => {
+        this.isModalOpen.set(false);
+        this.layout.showToast(
+          'Horário Clínico Agendado',
+          `Sessão de ${payload.patientName} reservada às ${payload.hourSlot} (${payload.modality}).`
+        );
+      },
+      error: (err: unknown) => {
+        this.layout.showToast(
+          'Não Foi Possível Agendar',
+          AuthService.extractErrorMessage(err, 'Conflito de horário ou erro ao agendar sessão.'),
+          'error'
+        );
+      },
+    });
   }
 
   public onSlotSelected(slot: ScheduleSlotItem): void {
-    if (slot.variant === 'active-selected-telehealth') {
+    this.store.selectAppointmentSlotForClinicalPanel(slot);
+    if (slot.variant === 'active-selected-telehealth' || slot.agendamentoId) {
       void this.router.navigate(['/painel-clinico']);
       return;
     }

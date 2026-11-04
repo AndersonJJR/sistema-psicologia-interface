@@ -1,5 +1,7 @@
 export type AuthMode = 'signin' | 'signup';
 
+export type PerfilUsuario = 'ADMIN' | 'PSICOLOGO' | 'RECEPCAO';
+
 export interface LoginCredentials {
   readonly email: string;
   readonly password: string;
@@ -9,17 +11,43 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   readonly fullName: string;
   readonly email: string;
+  readonly cpf: string;
+  readonly phone: string;
   readonly crpRegion: string;
   readonly crpNumber: string;
+  readonly numeroEpsi: string;
   readonly password: string;
   readonly acceptTerms: boolean;
 }
 
-export interface AuthenticatedUser {
-  readonly id: string;
-  readonly fullName: string;
-  readonly shortName: string;
+export interface LoginRequestDto {
+  readonly login: string;
+  readonly senha: string;
+}
+
+export interface RegistroPsicologoRequestDto {
+  readonly nome: string;
   readonly email: string;
   readonly crp: string;
-  readonly avatarUrl: string;
+  readonly senha: string;
+  readonly cpf?: string;
+  readonly telefone?: string;
+  readonly numeroEpsi?: string;
+}
+
+export interface TokenResponseDto {
+  readonly token: string;
+  readonly tipo: string;
+  readonly login: string;
+  readonly perfil: PerfilUsuario;
+  readonly idPsicologoVinculado: string | null;
+  readonly expiraEm: string;
+}
+
+export interface BackendErrorView {
+  readonly status?: number;
+  readonly erro?: string;
+  readonly detalhes?: readonly string[];
+  readonly caminho?: string;
+  readonly timestamp?: string;
 }

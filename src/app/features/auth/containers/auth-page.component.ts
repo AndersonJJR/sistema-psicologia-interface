@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthMode, LoginCredentials, RegisterCredentials } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
 import { ClinicalStoreService } from '../../../core/services/clinical-store.service';
 import { LayoutService } from '../../../core/services/layout.service';
 import { ToastNotificationComponent } from '../../../shared/components/toast/toast-notification.component';
@@ -31,7 +32,7 @@ import { SignUpFormComponent } from '../components/sign-up-form/sign-up-form.com
       overflow: hidden;
       width: 860px;
       max-width: 100%;
-      min-height: 560px;
+      min-height: 580px;
       background: #ffffff;
       border-radius: 1.5rem;
       border: 1px solid #e2e8f0;
@@ -249,13 +250,13 @@ import { SignUpFormComponent } from '../components/sign-up-form/sign-up-form.com
           <!-- SIGN UP FORM CONTAINER -->
           <div
             id="signUpPanel"
-            class="form-container sign-up-container h-full flex flex-col justify-center px-8 md:px-12 py-8 bg-white"
+            class="form-container sign-up-container h-full flex flex-col justify-center px-8 md:px-12 py-6 bg-white"
             [class.mobile-active]="mode() === 'signup'"
           >
             <app-sign-up-form
+              [submitting]="isSubmitting()"
               (submittedRegister)="onRegister($event)"
               (switchToSignIn)="setMode('signin')"
-              (ssoRequested)="onSsoAuth($event)"
             />
           </div>
 
@@ -266,10 +267,9 @@ import { SignUpFormComponent } from '../components/sign-up-form/sign-up-form.com
             [class.mobile-active]="mode() === 'signin'"
           >
             <app-sign-in-form
+              [submitting]="isSubmitting()"
               (submittedLogin)="onLogin($event)"
               (switchToSignUp)="setMode('signup')"
-              (ssoRequested)="onSsoAuth($event)"
-              (forgotPasswordRequested)="onForgotPassword()"
             />
           </div>
 
@@ -290,29 +290,11 @@ import { SignUpFormComponent } from '../components/sign-up-form/sign-up-form.com
         >
           <span class="text-slate-500">© 2026 PsicoSafe Tecnologia Clínica Ltda.</span>
           <div class="flex items-center gap-3 text-slate-500">
-            <a
-              href="javascript:void(0)"
-              (click)="onLegalLink('Termos de Uso CFP')"
-              class="hover:text-[#005c55] transition-colors"
-            >
-              Termos de Uso
-            </a>
+            <span>Resolução CFP nº 001/2009</span>
             <span>•</span>
-            <a
-              href="javascript:void(0)"
-              (click)="onLegalLink('Privacidade e Conformidade LGPD')"
-              class="hover:text-[#005c55] transition-colors"
-            >
-              Privacidade (LGPD)
-            </a>
+            <span>Conformidade LGPD</span>
             <span>•</span>
-            <a
-              href="javascript:void(0)"
-              (click)="onLegalLink('Arquitetura de Criptografia Ponta a Ponta')"
-              class="hover:text-[#005c55] transition-colors"
-            >
-              Segurança &amp; Criptografia
-            </a>
+            <span>Criptografia AES-256-GCM</span>
           </div>
         </div>
       </footer>
@@ -326,56 +308,83 @@ import { SignUpFormComponent } from '../components/sign-up-form/sign-up-form.com
 })
 export class AuthPageComponent {
   public readonly layout = inject(LayoutService);
+  private readonly authService = inject(AuthService);
   private readonly store = inject(ClinicalStoreService);
   private readonly router = inject(Router);
 
   public readonly mode = signal<AuthMode>('signin');
+  public readonly isSubmitting = signal<boolean>(false);
 
   public setMode(nextMode: AuthMode): void {
     this.mode.set(nextMode);
   }
 
   public onLogin(credentials: LoginCredentials): void {
-    this.layout.showToast(
-      'Autenticação Clínica Confirmada',
-      `Sessão segura iniciada para ${credentials.email} com certificado e-Psi ativo.`
-    );
-    void this.router.navigate(['/agenda']);
+    this.isSubmitting.set(true);
+    this.authService
+      .login(
+        {
+          login: credentials.email.trim(),
+          senha: credentials.password,
+        },
+        credentials.rememberMe
+      )
+      .subscribe({
+        next: (session) => {
+          this.isSubmitting.set(false);
+          this.layout.showToast(
+            'Autenticação Clínica Confirmada',
+            `Sessão JWT iniciada para ${session.login} (${session.perfil}).`
+          );
+          void this.router.navigate(['/agenda']);
+        },
+        error: (err: unknown) => {
+          this.isSubmitting.set(false);
+          const msg = AuthService.extractErrorMessage(
+            err,
+            'Falha ao autenticar. Verifique suas credenciais.'
+          );
+          this.layout.showToast('Falha na Autenticação', msg, 'error');
+        },
+      });
   }
 
   public onRegister(payload: RegisterCredentials): void {
-    this.store.updateProfile({
-      fullName: payload.fullName,
-      crpRegistration: `${payload.crpRegion}/${payload.crpNumber} - SP`,
-    });
-    this.layout.showToast(
-      'Credenciamento e-Psi Validado',
-      `Conta profissional de ${payload.fullName} criada com criptografia ativa.`
-    );
-    void this.router.navigate(['/perfil-profissional']);
-  }
+    this.isSubmitting.set(true);
+    const crpFormatted = `${payload.crpRegion.trim()}/${payload.crpNumber.trim()}`;
 
-  public onSsoAuth(provider: string): void {
-    this.layout.showToast(
-      `Autenticação Federada (${provider})`,
-      'Identidade clínica validada com sucesso. Redirecionando para a Agenda...'
-    );
-    void this.router.navigate(['/agenda']);
-  }
-
-  public onForgotPassword(): void {
-    this.layout.showToast(
-      'Recuperação Criptográfica Enviada',
-      'Instruções de redefinição de chave foram enviadas ao e-mail cadastrado no CFP.',
-      'mark_email_read'
-    );
-  }
-
-  public onLegalLink(topic: string): void {
-    this.layout.showToast(
-      topic,
-      'Ambiente homologado em conformidade com Resoluções CFP 01/2009, 11/2018 e LGPD.',
-      'verified_user'
-    );
+    this.authService
+      .registerPsychologist({
+        nome: payload.fullName.trim(),
+        email: payload.email.trim(),
+        cpf: payload.cpf.trim(),
+        telefone: payload.phone.trim(),
+        crp: crpFormatted,
+        numeroEpsi: payload.numeroEpsi.trim(),
+        senha: payload.password,
+      })
+      .subscribe({
+        next: () => {
+          this.isSubmitting.set(false);
+          this.store.updateProfile({
+            fullName: payload.fullName.trim(),
+            crpRegistration: crpFormatted,
+            phone: payload.phone.trim(),
+          });
+          this.layout.showToast(
+            'Credenciamento e-Psi Validado',
+            `Conta profissional de ${payload.fullName} criada com criptografia ativa.`
+          );
+          void this.router.navigate(['/perfil-profissional']);
+        },
+        error: (err: unknown) => {
+          this.isSubmitting.set(false);
+          const msg = AuthService.extractErrorMessage(
+            err,
+            'Não foi possível concluir o credenciamento profissional.'
+          );
+          this.layout.showToast('Erro no Cadastro', msg, 'error');
+        },
+      });
   }
 }

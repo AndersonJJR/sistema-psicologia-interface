@@ -15,10 +15,12 @@ import {
   ClinicalApproachOption,
   ClinicalSessionData,
   FormalProntuarioRecord,
+  LogAuditoriaApiDto,
   ModalidadeAtendimentoApi,
   NewAppointmentPayload,
   NewPaymentFormPayload,
   PacienteApiDto,
+  PacienteExportacaoApiDto,
   PacienteRequestDto,
   PagamentoApiDto,
   PagamentoRequestDto,
@@ -533,6 +535,7 @@ Relata melhora no padrão do sono (média de 6h30 ininterruptas), após adesão 
   });
 
   public readonly privacyPortal = this.privacyPortalState.asReadonly();
+  public readonly auditLogs = signal<readonly LogAuditoriaApiDto[]>([]);
 
   public readonly portabilityFormats = signal<readonly PortabilityFormatCard[]>([
     {
@@ -1670,7 +1673,84 @@ Relata melhora no padrão do sono (média de 6h30 ininterruptas), após adesão 
     this.billedTransactionsState.update((list) => [newTx, ...list]);
   }
 
+  public loadPrivacyAndAuditFromBackend(): void {
+    if (this.patientsList().length === 0) {
+      this.loadPatientsFromBackend();
+    }
+    this.http
+      .get<LogAuditoriaApiDto[]>(`${this.apiBaseUrl}/auditoria`)
+      .pipe(catchError(() => of([])))
+      .subscribe((logs) => {
+        if (logs.length > 0) {
+          this.auditLogs.set(logs.slice(0, 12));
+          const latestExport = logs.find((l) => l.acao === 'EXPORTACAO');
+          if (latestExport) {
+            const dt = new Date(latestExport.carimboTempoUtc);
+            const timeStr = dt.toLocaleTimeString('pt-BR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            this.privacyPortalState.update((prev) => ({
+              ...prev,
+              lastPortabilityEmissionLabel: `Última emissão de portabilidade: ${timeStr} (Log #${latestExport.idLog.slice(0, 6).toUpperCase()})`,
+            }));
+          }
+        }
+      });
+  }
+
+  public exportPatientPortabilityFromBackend(): Observable<PacienteExportacaoApiDto | null> {
+    this.setPrivacyExporting(true);
+    const currentState = this.privacyPortalState();
+    const matchedPatient =
+      this.patientsList().find((p) => p.idPaciente === currentState.targetPatientId) ??
+      this.patientsList().find((p) => p.cpf === currentState.targetPatientCpf) ??
+      this.patientsList()[0];
+
+    const targetId = matchedPatient?.idPaciente ?? this.patientRecordState().id;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      targetId
+    );
+
+    if (!isUuid) {
+      this.markPortabilityExportCompleted();
+      return of(null);
+    }
+
+    return this.http
+      .get<PacienteExportacaoApiDto>(`${this.apiBaseUrl}/exportacao/paciente/${targetId}`)
+      .pipe(
+        tap(() => {
+          this.markPortabilityExportCompleted();
+          this.loadPrivacyAndAuditFromBackend();
+        }),
+        catchError(() => {
+          this.markPortabilityExportCompleted();
+          return of(null);
+        })
+      );
+  }
+
   public updatePrivacySearchQuery(query: string): void {
+    const q = query.trim().toLowerCase();
+    const matched = this.patientsList().find(
+      (p) => p.nome.toLowerCase().includes(q) || p.cpf.includes(q)
+    );
+    if (matched && q.length >= 3) {
+      const words = matched.nome.trim().split(/\s+/);
+      const shortName =
+        words.length >= 2 ? `${words[0]} ${words[words.length - 1]}` : matched.nome;
+      this.privacyPortalState.update((prev) => ({
+        ...prev,
+        targetPatientId: matched.idPaciente,
+        searchQuery: query,
+        targetPatientName: matched.nome,
+        targetPatientShortName: shortName,
+        targetPatientCpf: matched.cpf,
+        prontuarioStatusBadge: matched.ativo ? 'Prontuário Ativo' : 'Prontuário Inativo',
+      }));
+      return;
+    }
     this.privacyPortalState.update((prev) => ({
       ...prev,
       searchQuery: query,

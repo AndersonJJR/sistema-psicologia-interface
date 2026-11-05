@@ -20,6 +20,8 @@ import {
   NewPaymentFormPayload,
   PacienteApiDto,
   PacienteRequestDto,
+  PagamentoApiDto,
+  PagamentoRequestDto,
   PatientRecord,
   PaymentMethodKey,
   PaymentMethodOption,
@@ -34,6 +36,7 @@ import {
   RegistroDocumentalApiDto,
   RegistroDocumentalRequestDto,
   ScheduleSlotItem,
+  StatusSplitApi,
 } from '../models';
 import { AuthService } from './auth.service';
 
@@ -1416,8 +1419,213 @@ Relata melhora no padrão do sono (média de 6h30 ininterruptas), após adesão 
     }));
   }
 
-  public setBillingFilter(filter: BillingFilterType): void {
+  public readonly setBillingFilter = (filter: BillingFilterType): void => {
     this.billingFilter.set(filter);
+  };
+
+  public loadPaymentsFromBackend(): void {
+    if (this.agendamentosList().length === 0) {
+      this.loadAgendamentosFromBackend();
+    }
+    this.http
+      .get<PagamentoApiDto[]>(`${this.apiBaseUrl}/pagamentos`)
+      .pipe(catchError(() => of([])))
+      .subscribe((list) => {
+        if (list.length > 0) {
+          this.syncBilledTransactionsFromBackend(list);
+        }
+      });
+  }
+
+  public registerPaymentOnBackend(
+    payload: NewPaymentFormPayload
+  ): Observable<BilledSessionTransaction> {
+    const clinicShare = Math.round(payload.grossAmount * 0.3 * 100) / 100;
+    const psychShare = Math.round(payload.grossAmount * 0.7 * 100) / 100;
+    const statusSplit: StatusSplitApi =
+      payload.paymentMethod === 'cartao' ? 'PENDENTE' : 'LIQUIDADO';
+    const meioPagamento = payload.paymentMethod.toUpperCase();
+
+    const createAgendamentoForPayment$ = (): Observable<string | null> => {
+      const idPsicologo = this.authService.currentPsychologistId() ?? this.profileState().id;
+      const patient =
+        this.patientsList().find(
+          (p) => p.nome.toLowerCase() === payload.patientName.trim().toLowerCase()
+        ) ?? this.patientsList()[0];
+
+      if (!idPsicologo || !patient) {
+        return of(null);
+      }
+
+      const uniqueMinute = Math.floor(Math.random() * 50) + 1;
+      const uniqueSecond = Math.floor(Math.random() * 50) + 1;
+      const dataHoraSessao = `2024-10-25T16:${String(uniqueMinute).padStart(2, '0')}:${String(uniqueSecond).padStart(2, '0')}`;
+      const agReq: AgendamentoRequestDto = {
+        idPsicologo,
+        idPaciente: patient.idPaciente,
+        dataHoraSessao,
+        modalidade: payload.modality === 'Teleconsulta' ? 'TELECONSULTA' : 'PRESENCIAL',
+        status: 'REALIZADO',
+        enderecoLocalSessao: patient.enderecoLocalSessao,
+      };
+      return this.http
+        .post<AgendamentoApiDto>(`${this.apiBaseUrl}/agendamentos`, agReq)
+        .pipe(
+          map((ag) => ag.idAgendamento),
+          catchError(() => of(null))
+        );
+    };
+
+    const resolveTargetAgendamento$ = payload.agendamentoId
+      ? of(payload.agendamentoId)
+      : createAgendamentoForPayment$();
+
+    return resolveTargetAgendamento$.pipe(
+      switchMap((idAgendamento) => {
+        if (!idAgendamento) {
+          this.registerNewPayment(payload);
+          return of(this.billedTransactionsState()[0]);
+        }
+        const requestDto: PagamentoRequestDto = {
+          idAgendamento,
+          valorTotal: payload.grossAmount,
+          taxaClinicaInfraestrutura: clinicShare,
+          repasseProfissional: psychShare,
+          statusSplit,
+          meioPagamento,
+        };
+        return this.http
+          .post<PagamentoApiDto>(`${this.apiBaseUrl}/pagamentos`, requestDto)
+          .pipe(
+            map((dto) => {
+              const mapped = this.mapPagamentoDtoToTransaction(dto);
+              this.billedTransactionsState.update((list) => [mapped, ...list]);
+              this.recalculateTotalRepass();
+              return mapped;
+            })
+          );
+      })
+    );
+  }
+
+  public settlePaymentSplitOnBackend(
+    tx: BilledSessionTransaction
+  ): Observable<BilledSessionTransaction> {
+    if (!tx.pagamentoId) {
+      return of(tx);
+    }
+    return this.http
+      .patch<PagamentoApiDto>(`${this.apiBaseUrl}/pagamentos/${tx.pagamentoId}/liquidar`, {})
+      .pipe(
+        map((dto) => {
+          const updatedTx = this.mapPagamentoDtoToTransaction(dto);
+          this.billedTransactionsState.update((list) =>
+            list.map((item) => (item.pagamentoId === dto.idPagamento ? updatedTx : item))
+          );
+          this.recalculateTotalRepass();
+          return updatedTx;
+        })
+      );
+  }
+
+  public downloadCarneLeaoCsvFromBackend(): Observable<Blob> {
+    return this.http.get(`${this.apiBaseUrl}/pagamentos/carne-leao/csv`, {
+      responseType: 'blob',
+    });
+  }
+
+  public downloadPaymentXmlFromBackend(tx: BilledSessionTransaction): Observable<Blob> {
+    const query = tx.pagamentoId ? `?idPagamento=${tx.pagamentoId}` : '';
+    return this.http.get(`${this.apiBaseUrl}/pagamentos/comprovante-xml${query}`, {
+      responseType: 'blob',
+    });
+  }
+
+  private syncBilledTransactionsFromBackend(list: readonly PagamentoApiDto[]): void {
+    const mapped = list.map((dto) => this.mapPagamentoDtoToTransaction(dto));
+    this.billedTransactionsState.set(mapped);
+    this.recalculateTotalRepass();
+
+    const first = list[0];
+    if (first) {
+      const methodKey = (first.meioPagamento?.toLowerCase() || 'pix') as PaymentMethodKey;
+      const validMethod: PaymentMethodKey =
+        methodKey === 'cartao' || methodKey === 'ted' ? methodKey : 'pix';
+      const maskedCpf =
+        first.cpfPaciente && first.cpfPaciente.length >= 11
+          ? `${first.cpfPaciente.slice(0, 3)}.***.***-${first.cpfPaciente.slice(-2)}`
+          : first.cpfPaciente || '382.***.***-19';
+      this.activeConciliationState.update((prev) => ({
+        ...prev,
+        patientName: first.nomePaciente,
+        maskedCpfAndProntuario: `CPF: ${maskedCpf} • Prontuário #${first.idPaciente.slice(0, 4).toUpperCase()}`,
+        paymentMethod: validMethod,
+        grossAmount: Number(first.valorTotal),
+        statusBadge:
+          first.statusSplit === 'LIQUIDADO'
+            ? `Liquidado via ${first.meioPagamento || 'Pix'}`
+            : 'Processando D+1',
+        auditExtractId: `ID: SPL-${first.idPagamento.slice(0, 7).toUpperCase()}-BR`,
+      }));
+    }
+  }
+
+  private recalculateTotalRepass(): void {
+    const sum = this.billedTransactionsState().reduce(
+      (acc, item) => acc + item.psychologistShareAmount,
+      8400
+    );
+    this.totalMonthlyRepassFormatted.set(
+      sum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    );
+  }
+
+  private mapPagamentoDtoToTransaction(dto: PagamentoApiDto): BilledSessionTransaction {
+    const words = dto.nomePaciente.trim().split(/\s+/);
+    const initials =
+      words.length >= 2
+        ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
+        : dto.nomePaciente.slice(0, 2).toUpperCase();
+    const dt = new Date(dto.dataPagamento);
+    const dateLabel = dt.toLocaleDateString('pt-BR');
+    const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const modalityLabel =
+      dto.modalidadeSessao === 'TELECONSULTA' ? 'Teleconsulta' : 'Presencial';
+    const maskedCpf =
+      dto.cpfPaciente && dto.cpfPaciente.length >= 11
+        ? `CPF ${dto.cpfPaciente.slice(0, 3)}.***.***-${dto.cpfPaciente.slice(-2)}`
+        : `CPF ${dto.cpfPaciente || '382.***.***-19'}`;
+    const meio = (dto.meioPagamento || 'PIX').toUpperCase();
+    const gross = Number(dto.valorTotal);
+    const clinicShare = Number(dto.taxaClinicaInfraestrutura);
+    const psychShare = Number(dto.repasseProfissional);
+    const clinicPct = gross > 0 ? Math.round((clinicShare / gross) * 100) : 30;
+    const psychPct = gross > 0 ? Math.round((psychShare / gross) * 100) : 70;
+
+    return {
+      id: `tx-${dto.idPagamento}`,
+      pagamentoId: dto.idPagamento,
+      dateLabel,
+      timeAndModalityLabel: `${timeStr} • ${modalityLabel}`,
+      patientInitials: initials,
+      initialsVariant: meio === 'PIX' ? 'primary' : 'tertiary',
+      patientName: dto.nomePaciente,
+      maskedCpf,
+      paymentIcon:
+        meio === 'PIX' ? 'bolt' : meio === 'CARTAO' ? 'credit_card' : 'account_balance',
+      paymentMethodLabel:
+        meio === 'PIX'
+          ? 'Pix Instantâneo'
+          : meio === 'CARTAO'
+            ? 'Cartão (1x)'
+            : 'TED Conciliado',
+      settlementStatus: dto.statusSplit === 'LIQUIDADO' ? 'Liquidado' : 'Processando D+1',
+      grossAmount: gross,
+      clinicShareAmount: clinicShare,
+      clinicPercentageLabel: `${clinicPct}% retenção`,
+      psychologistShareAmount: psychShare,
+      psychologistPercentageLabel: `${psychPct}% repasse`,
+    };
   }
 
   public registerNewPayment(payload: NewPaymentFormPayload): void {

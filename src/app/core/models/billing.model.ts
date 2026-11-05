@@ -25,6 +25,7 @@ export interface ActiveBillingConciliation {
 
 export interface BilledSessionTransaction {
   readonly id: string;
+  readonly pagamentoId?: string;
   readonly dateLabel: string;
   readonly timeAndModalityLabel: string;
   readonly patientInitials: string;
@@ -42,9 +43,39 @@ export interface BilledSessionTransaction {
 }
 
 export interface NewPaymentFormPayload {
+  readonly agendamentoId?: string;
   readonly patientName: string;
   readonly maskedCpf: string;
   readonly modality: 'Presencial' | 'Teleconsulta';
   readonly paymentMethod: PaymentMethodKey;
   readonly grossAmount: number;
+}
+
+export type StatusSplitApi = 'PENDENTE' | 'LIQUIDADO' | 'ERRO';
+
+export interface PagamentoApiDto {
+  readonly idPagamento: string;
+  readonly idAgendamento: string;
+  readonly idPaciente: string;
+  readonly nomePaciente: string;
+  readonly cpfPaciente: string;
+  readonly modalidadeSessao: string;
+  readonly idPsicologo: string;
+  readonly nomePsicologo: string;
+  readonly valorTotal: number;
+  readonly taxaClinicaInfraestrutura: number;
+  readonly repasseProfissional: number;
+  readonly statusSplit: StatusSplitApi;
+  readonly meioPagamento: string;
+  readonly dataPagamento: string;
+  readonly ativo: boolean;
+}
+
+export interface PagamentoRequestDto {
+  readonly idAgendamento: string;
+  readonly valorTotal: number;
+  readonly taxaClinicaInfraestrutura: number;
+  readonly repasseProfissional: number;
+  readonly statusSplit: StatusSplitApi;
+  readonly meioPagamento: string;
 }

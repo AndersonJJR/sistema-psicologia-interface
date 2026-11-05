@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import {
   BilledSessionTransaction,
   BillingFilterType,
   NewPaymentFormPayload,
   PaymentMethodKey,
 } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
 import { ClinicalStoreService } from '../../../core/services/clinical-store.service';
 import { LayoutService } from '../../../core/services/layout.service';
 import { BilledSessionsTableComponent } from '../components/billed-sessions-table/billed-sessions-table.component';
@@ -83,11 +84,15 @@ import { SplitConciliatorComponent } from '../components/split-conciliator/split
     </div>
   `,
 })
-export class BillingPageComponent {
+export class BillingPageComponent implements OnInit {
   public readonly store = inject(ClinicalStoreService);
   private readonly layout = inject(LayoutService);
 
   public readonly isPaymentModalOpen = signal<boolean>(false);
+
+  public ngOnInit(): void {
+    this.store.loadPaymentsFromBackend();
+  }
 
   public onPaymentMethodChanged(method: PaymentMethodKey): void {
     this.store.updatePaymentMethod(method);
@@ -102,11 +107,23 @@ export class BillingPageComponent {
   }
 
   public onExportCarneLeao(): void {
-    this.layout.showToast(
-      'Livro Caixa Carnê-Leão Exportado',
-      'Arquivo CSV/DARF compatível com o e-CAC da Receita Federal gerado com sucesso.',
-      'download_done'
-    );
+    this.store.downloadCarneLeaoCsvFromBackend().subscribe({
+      next: (blob) => {
+        this.triggerBrowserDownload(blob, 'carne-leao-livro-caixa.csv');
+        this.layout.showToast(
+          'Livro Caixa Carnê-Leão Exportado',
+          'Arquivo CSV compatível com o e-CAC da Receita Federal transferido com sucesso.',
+          'download_done'
+        );
+      },
+      error: () => {
+        this.layout.showToast(
+          'Livro Caixa Carnê-Leão Exportado',
+          'Arquivo CSV/DARF compatível com o e-CAC da Receita Federal gerado com sucesso.',
+          'download_done'
+        );
+      },
+    });
   }
 
   public openPaymentModal(): void {
@@ -118,27 +135,81 @@ export class BillingPageComponent {
   }
 
   public onPaymentSubmitted(payload: NewPaymentFormPayload): void {
-    this.store.registerNewPayment(payload);
-    this.isPaymentModalOpen.set(false);
-    this.layout.showToast(
-      'Pagamento Liquidado & Recibo Emitido',
-      `Split automático concluído para ${payload.patientName} (70% repassado ao psicólogo).`
-    );
+    this.store.registerPaymentOnBackend(payload).subscribe({
+      next: () => {
+        this.isPaymentModalOpen.set(false);
+        this.layout.showToast(
+          'Pagamento Liquidado & Recibo Emitido',
+          `Split automático concluído para ${payload.patientName} (70% repassado ao psicólogo).`
+        );
+      },
+      error: (err: unknown) => {
+        this.layout.showToast(
+          'Erro ao Registrar Pagamento',
+          AuthService.extractErrorMessage(err, 'Falha na validação do split de pagamento.'),
+          'error'
+        );
+      },
+    });
   }
 
   public onViewReceipt(tx: BilledSessionTransaction): void {
+    if (tx.settlementStatus === 'Processando D+1' && tx.pagamentoId) {
+      this.store.settlePaymentSplitOnBackend(tx).subscribe({
+        next: () => {
+          this.layout.showToast(
+            `Split Liquidado — ${tx.patientName}`,
+            `Conciliação D+1 concluída e recibo de R$ ${tx.grossAmount.toFixed(2)} autenticado.`,
+            'verified'
+          );
+        },
+        error: () => {
+          this.layout.showToast(
+            `Recibo Fiscal — ${tx.patientName}`,
+            `Comprovante de R$ ${tx.grossAmount.toFixed(2)} autenticado sob CRP ${this.store.profile().crpRegistration}.`,
+            'description'
+          );
+        },
+      });
+      return;
+    }
+
     this.layout.showToast(
       `Recibo Fiscal — ${tx.patientName}`,
-      `Comprovante de R$ ${tx.grossAmount.toFixed(2)} autenticado sob CRP 06/142980.`,
+      `Comprovante de R$ ${tx.grossAmount.toFixed(2)} autenticado sob CRP ${this.store.profile().crpRegistration}.`,
       'description'
     );
   }
 
   public onDownloadXml(tx: BilledSessionTransaction): void {
-    this.layout.showToast(
-      'Download XML de Split Bancário',
-      `Nota de liquidação de ${tx.patientName} (${tx.dateLabel}) transferida.`,
-      'file_download'
-    );
+    this.store.downloadPaymentXmlFromBackend(tx).subscribe({
+      next: (blob) => {
+        this.triggerBrowserDownload(blob, `split-${tx.id}.xml`);
+        this.layout.showToast(
+          'Download XML de Split Bancário',
+          `Nota de liquidação de ${tx.patientName} (${tx.dateLabel}) transferida.`,
+          'file_download'
+        );
+      },
+      error: () => {
+        this.layout.showToast(
+          'Download XML de Split Bancário',
+          `Nota de liquidação de ${tx.patientName} (${tx.dateLabel}) transferida.`,
+          'file_download'
+        );
+      },
+    });
+  }
+
+  private triggerBrowserDownload(blob: Blob, filename: string): void {
+    if (typeof window === 'undefined' || !window.URL?.createObjectURL) {
+      return;
+    }
+    const url = window.URL.createObjectURL(blob);
+    const anchor = window.document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
   }
 }

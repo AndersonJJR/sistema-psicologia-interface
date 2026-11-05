@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import {
   ActiveBillingConciliation,
   AgendamentoApiDto,
@@ -26,9 +26,13 @@ import {
   PortabilityFormatCard,
   PrivacyPortalState,
   PrivateDocumentalRecord,
+  ProntuarioClinicoApiDto,
+  ProntuarioClinicoRequestDto,
   PsicologoApiDto,
   PsicologoRequestDto,
   PsychologistProfile,
+  RegistroDocumentalApiDto,
+  RegistroDocumentalRequestDto,
   ScheduleSlotItem,
 } from '../models';
 import { AuthService } from './auth.service';
@@ -1141,6 +1145,233 @@ Relata melhora no padrão do sono (média de 6h30 ininterruptas), após adesão 
       ),
       newSlot,
     ]);
+  }
+
+  public loadClinicalSessionFromBackend(idAgendamentoParam?: string): void {
+    const resolveAgendamento$ = (() => {
+      const targetId =
+        idAgendamentoParam ??
+        this.selectedAgendamentoId() ??
+        this.agendamentosList()[0]?.idAgendamento;
+      if (targetId) {
+        const cached = this.agendamentosList().find((a) => a.idAgendamento === targetId);
+        if (cached) {
+          return of(cached);
+        }
+        return this.http
+          .get<AgendamentoApiDto>(`${this.apiBaseUrl}/agendamentos/${targetId}`)
+          .pipe(catchError(() => of(null)));
+      }
+      return this.http.get<AgendamentoApiDto[]>(`${this.apiBaseUrl}/agendamentos`).pipe(
+        tap((list) => {
+          if (list.length > 0) {
+            this.agendamentosList.set(list);
+            this.syncScheduleSlotsFromBackend(list);
+          }
+        }),
+        map(
+          (list) =>
+            list.find((a) => a.modalidade === 'TELECONSULTA' && a.status === 'AGENDADO') ??
+            list[0] ??
+            null
+        ),
+        catchError(() => of(null))
+      );
+    })();
+
+    resolveAgendamento$.subscribe((agendamento) => {
+      if (!agendamento) {
+        return;
+      }
+      this.selectedAgendamentoId.set(agendamento.idAgendamento);
+      this.applyAgendamentoHeaderToSession(agendamento);
+
+      const prontuario$ = this.http
+        .get<ProntuarioClinicoApiDto>(
+          `${this.apiBaseUrl}/prontuarios/agendamento/${agendamento.idAgendamento}`
+        )
+        .pipe(catchError(() => of(null)));
+
+      const registro$ = this.authService.canAccessRegistrosDocumentais()
+        ? this.http
+            .get<RegistroDocumentalApiDto>(
+              `${this.apiBaseUrl}/registros-documentais/agendamento/${agendamento.idAgendamento}`
+            )
+            .pipe(catchError(() => of(null)))
+        : of(null);
+
+      forkJoin({ prontuario: prontuario$, registro: registro$ }).subscribe(
+        ({ prontuario, registro }) => {
+          this.clinicalSessionState.update((prev) => ({
+            ...prev,
+            agendamentoId: agendamento.idAgendamento,
+            isSignedAndImmutable: Boolean(prontuario?.assinado || registro?.assinado),
+            lastDraftSavedAt: prontuario?.assinado
+              ? 'Sessão assinada e selada digitalmente (Imutável)'
+              : prontuario
+                ? `Sincronizado com servidor CFP (${new Date(prontuario.dataRegistro).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})`
+                : prev.lastDraftSavedAt,
+            formalRecord: prontuario
+              ? {
+                  technicalProcedures: prontuario.procedimentosTecnicos,
+                  observableEvolution: prontuario.evolucaoObservavel,
+                }
+              : prev.formalRecord,
+            privateRecord: registro
+              ? {
+                  provisionalHypotheses: registro.hipotesesProvisorias,
+                  supervisionAndCountertransference: registro.notasSupervisao,
+                }
+              : prev.privateRecord,
+            signatureMetadata: {
+              responsibleProfessional: agendamento.nomePsicologo || prev.signatureMetadata.responsibleProfessional,
+              activeRegistration: `CRP ${this.profileState().crpRegistration}`,
+              cryptographicHash:
+                prontuario?.hashAssinatura ?? prev.signatureMetadata.cryptographicHash,
+            },
+          }));
+        }
+      );
+    });
+  }
+
+  public saveClinicalSessionToBackend(
+    formal: FormalProntuarioRecord,
+    priv: PrivateDocumentalRecord
+  ): Observable<string> {
+    const idAgendamento =
+      this.clinicalSessionState().agendamentoId ?? this.selectedAgendamentoId();
+    if (!idAgendamento) {
+      return of(this.saveClinicalSessionDraft(formal, priv));
+    }
+
+    const prontuarioPayload: ProntuarioClinicoRequestDto = {
+      idAgendamento,
+      procedimentosTecnicos: formal.technicalProcedures.trim() || 'Registro clínico em andamento.',
+      evolucaoObservavel: formal.observableEvolution.trim() || 'Evolução observável em andamento.',
+    };
+
+    const saveProntuario$ = this.http.post<ProntuarioClinicoApiDto>(
+      `${this.apiBaseUrl}/prontuarios`,
+      prontuarioPayload
+    );
+
+    const hasPrivateContent =
+      Boolean(priv.provisionalHypotheses.trim()) ||
+      Boolean(priv.supervisionAndCountertransference.trim());
+
+    const saveRegistro$ =
+      this.authService.canAccessRegistrosDocumentais() && hasPrivateContent
+        ? this.http
+            .post<RegistroDocumentalApiDto>(`${this.apiBaseUrl}/registros-documentais`, {
+              idAgendamento,
+              hipotesesProvisorias:
+                priv.provisionalHypotheses.trim() || 'Sem hipóteses adicionais.',
+              notasSupervisao:
+                priv.supervisionAndCountertransference.trim() || 'Sem notas de supervisão.',
+            } satisfies RegistroDocumentalRequestDto)
+            .pipe(catchError(() => of(null)))
+        : of(null);
+
+    return forkJoin({ prontuario: saveProntuario$, registro: saveRegistro$ }).pipe(
+      map(({ prontuario }) => {
+        const timeStr = new Date(prontuario.dataRegistro).toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        const label = `Último rascunho salvo às ${timeStr}`;
+        this.clinicalSessionState.update((prev) => ({
+          ...prev,
+          formalRecord: formal,
+          privateRecord: priv,
+          lastDraftSavedAt: label,
+        }));
+        return label;
+      })
+    );
+  }
+
+  public signClinicalSessionOnBackend(
+    formal: FormalProntuarioRecord,
+    priv: PrivateDocumentalRecord
+  ): Observable<ClinicalSessionData> {
+    const idAgendamento =
+      this.clinicalSessionState().agendamentoId ?? this.selectedAgendamentoId();
+    if (!idAgendamento) {
+      this.signAndSealClinicalSession(formal, priv);
+      return of(this.clinicalSessionState());
+    }
+
+    return this.saveClinicalSessionToBackend(formal, priv).pipe(
+      switchMap(() =>
+        this.http.post<ProntuarioClinicoApiDto>(
+          `${this.apiBaseUrl}/prontuarios/agendamento/${idAgendamento}/assinar`,
+          {}
+        )
+      ),
+      map((signedDto) => {
+        this.clinicalSessionState.update((prev) => ({
+          ...prev,
+          formalRecord: formal,
+          privateRecord: priv,
+          isSignedAndImmutable: true,
+          lastDraftSavedAt: 'Sessão assinada e selada digitalmente (Imutável)',
+          signatureMetadata: {
+            ...prev.signatureMetadata,
+            cryptographicHash:
+              signedDto.hashAssinatura ?? prev.signatureMetadata.cryptographicHash,
+          },
+        }));
+        return this.clinicalSessionState();
+      })
+    );
+  }
+
+  public dispatchEmergencyAlertOnBackend(): Observable<AgendamentoApiDto | null> {
+    const idAgendamento =
+      this.clinicalSessionState().agendamentoId ?? this.selectedAgendamentoId();
+    if (!idAgendamento) {
+      return of(null);
+    }
+    return this.http.post<AgendamentoApiDto>(
+      `${this.apiBaseUrl}/agendamentos/${idAgendamento}/alerta-emergencia`,
+      {}
+    );
+  }
+
+  private applyAgendamentoHeaderToSession(agendamento: AgendamentoApiDto): void {
+    const words = agendamento.nomePaciente.trim().split(/\s+/);
+    const initials =
+      words.length >= 2
+        ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
+        : agendamento.nomePaciente.slice(0, 2).toUpperCase();
+    const dt = new Date(agendamento.dataHoraSessao);
+    const dateStr = dt.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+    const hourStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const endDt = new Date(dt.getTime() + 50 * 60 * 1000);
+    const endHourStr = endDt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const cleanPhone = agendamento.contatoEmergenciaTelefone.replace(/\D/g, '');
+
+    this.clinicalSessionState.update((prev) => ({
+      ...prev,
+      agendamentoId: agendamento.idAgendamento,
+      patientName: agendamento.nomePaciente,
+      patientInitials: initials,
+      sessionDateLabel: `${dateStr} • ${hourStr} às ${endHourStr}`,
+      crisisInfo: {
+        ...prev.crisisInfo,
+        contactName: agendamento.contatoEmergenciaNome || prev.crisisInfo.contactName,
+        phoneDisplay: agendamento.contatoEmergenciaTelefone || prev.crisisInfo.phoneDisplay,
+        phoneHref: cleanPhone ? `tel:${cleanPhone}` : prev.crisisInfo.phoneHref,
+        sessionAddressLine1:
+          agendamento.enderecoLocalSessao || prev.crisisInfo.sessionAddressLine1,
+        sessionAddressLine2: 'Endereço Validado para Suporte SAMU 192 (Res. CFP 11/2018)',
+      },
+    }));
   }
 
   public saveClinicalSessionDraft(

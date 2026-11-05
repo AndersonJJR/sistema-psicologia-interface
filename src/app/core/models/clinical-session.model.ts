@@ -27,6 +27,7 @@ export interface DigitalSignatureMetadata {
 }
 
 export interface ClinicalSessionData {
+  readonly agendamentoId?: string;
   readonly patientName: string;
   readonly patientInitials: string;
   readonly patientAgeLabel: string;
@@ -39,4 +40,45 @@ export interface ClinicalSessionData {
   readonly formalRecord: FormalProntuarioRecord;
   readonly privateRecord: PrivateDocumentalRecord;
   readonly signatureMetadata: DigitalSignatureMetadata;
+}
+
+export interface ProntuarioClinicoApiDto {
+  readonly idProntuario: string;
+  readonly idAgendamento: string;
+  readonly idPaciente: string;
+  readonly nomePaciente: string;
+  readonly idPsicologo: string;
+  readonly nomePsicologo: string;
+  readonly procedimentosTecnicos: string;
+  readonly evolucaoObservavel: string;
+  readonly dataRegistro: string;
+  readonly assinado: boolean;
+  readonly hashAssinatura: string | null;
+  readonly ativo: boolean;
+  readonly deletedAt: string | null;
+}
+
+export interface ProntuarioClinicoRequestDto {
+  readonly idAgendamento: string;
+  readonly procedimentosTecnicos: string;
+  readonly evolucaoObservavel: string;
+}
+
+export interface RegistroDocumentalApiDto {
+  readonly idRegistroDocumental: string;
+  readonly idAgendamento: string;
+  readonly idPsicologoTitular: string;
+  readonly idPaciente: string;
+  readonly hipotesesProvisorias: string;
+  readonly notasSupervisao: string;
+  readonly dataRegistro: string;
+  readonly assinado: boolean;
+  readonly ativo: boolean;
+  readonly deletedAt: string | null;
+}
+
+export interface RegistroDocumentalRequestDto {
+  readonly idAgendamento: string;
+  readonly hipotesesProvisorias: string;
+  readonly notasSupervisao: string;
 }

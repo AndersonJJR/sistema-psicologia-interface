@@ -1,12 +1,16 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  OnInit,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClinicalTabType } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
 import { ClinicalStoreService } from '../../../core/services/clinical-store.service';
 import { LayoutService } from '../../../core/services/layout.service';
 import { FormalRecordTabComponent } from '../components/formal-record-tab/formal-record-tab.component';
@@ -179,9 +183,11 @@ export interface PrivateRecordFormControls {
     </div>
   `,
 })
-export class ClinicalPanelPageComponent {
+export class ClinicalPanelPageComponent implements OnInit {
   public readonly store = inject(ClinicalStoreService);
+  private readonly authService = inject(AuthService);
   private readonly layout = inject(LayoutService);
+  private readonly destroyRef = inject(DestroyRef);
 
   public readonly activeTab = signal<ClinicalTabType>('prontuario');
   public readonly isCrisisCardOpen = signal<boolean>(false);
@@ -221,7 +227,52 @@ export class ClinicalPanelPageComponent {
     ),
   });
 
+  constructor() {
+    effect(() => {
+      const session = this.store.clinicalSession();
+      this.formalForm.patchValue(
+        {
+          technicalProcedures: session.formalRecord.technicalProcedures,
+          observableEvolution: session.formalRecord.observableEvolution,
+        },
+        { emitEvent: false }
+      );
+      this.privateForm.patchValue(
+        {
+          provisionalHypotheses: session.privateRecord.provisionalHypotheses,
+          supervisionAndCountertransference:
+            session.privateRecord.supervisionAndCountertransference,
+        },
+        { emitEvent: false }
+      );
+    });
+  }
+
+  public ngOnInit(): void {
+    this.store.loadClinicalSessionFromBackend();
+    if (typeof window !== 'undefined') {
+      const timerId = window.setInterval(() => {
+        if (!this.store.clinicalSession().isSignedAndImmutable) {
+          this.elapsedSeconds.update((v) => v + 1);
+        }
+      }, 1000);
+      this.destroyRef.onDestroy(() => window.clearInterval(timerId));
+    }
+  }
+
   public selectTab(tab: ClinicalTabType): void {
+    if (
+      tab === 'privativo' &&
+      this.authService.isAuthenticated() &&
+      !this.authService.canAccessRegistrosDocumentais()
+    ) {
+      this.layout.showToast(
+        'Sigilo Profissional Estrito (CFP 001/2009)',
+        'O Registro Documental criptografado é exclusivo do psicólogo titular da sessão.',
+        'lock'
+      );
+      return;
+    }
     this.activeTab.set(tab);
   }
 
@@ -235,11 +286,23 @@ export class ClinicalPanelPageComponent {
 
   public onDispatchEmergencyAlert(): void {
     this.isCrisisCardOpen.set(false);
-    this.layout.showToast(
-      'Protocolo de Risco Acionado (Res. CFP 11/2018)',
-      'Notificação urgente enviada para Mariana Rocha e registro de auditoria gerado.',
-      'emergency'
-    );
+    this.store.dispatchEmergencyAlertOnBackend().subscribe({
+      next: () => {
+        const contactName = this.store.clinicalSession().crisisInfo.contactName;
+        this.layout.showToast(
+          'Protocolo de Risco Acionado (Res. CFP 11/2018)',
+          `Notificação urgente enviada para ${contactName} e registro de auditoria gravado.`,
+          'emergency'
+        );
+      },
+      error: (err: unknown) => {
+        this.layout.showToast(
+          'Erro no Protocolo de Emergência',
+          AuthService.extractErrorMessage(err, 'Falha ao registrar acionamento de emergência.'),
+          'error'
+        );
+      },
+    });
   }
 
   public onFormatText(event: {
@@ -262,14 +325,26 @@ export class ClinicalPanelPageComponent {
   }
 
   public onSaveDraft(): void {
-    const timeLabel = this.store.saveClinicalSessionDraft(
-      this.formalForm.getRawValue(),
-      this.privateForm.getRawValue()
-    );
-    this.layout.showToast(
-      'Rascunho Clínico Salvo',
-      `${timeLabel} com criptografia AES-256 ativa.`
-    );
+    this.store
+      .saveClinicalSessionToBackend(
+        this.formalForm.getRawValue(),
+        this.privateForm.getRawValue()
+      )
+      .subscribe({
+        next: (timeLabel) => {
+          this.layout.showToast(
+            'Rascunho Clínico Salvo',
+            `${timeLabel} com criptografia AES-256 ativa.`
+          );
+        },
+        error: (err: unknown) => {
+          this.layout.showToast(
+            'Erro ao Salvar Rascunho',
+            AuthService.extractErrorMessage(err, 'Não foi possível salvar o rascunho da sessão.'),
+            'error'
+          );
+        },
+      });
   }
 
   public openSignatureModal(): void {
@@ -291,14 +366,27 @@ export class ClinicalPanelPageComponent {
   }
 
   public onConfirmDigitalSignature(): void {
-    this.store.signAndSealClinicalSession(
-      this.formalForm.getRawValue(),
-      this.privateForm.getRawValue()
-    );
-    this.isSignatureModalOpen.set(false);
-    this.layout.showToast(
-      'Sessão Assinada e Selada Digitalmente',
-      'Prontuário assinado com certificado ICP-Brasil / e-Psi (Registro Imutável).'
-    );
+    this.store
+      .signClinicalSessionOnBackend(
+        this.formalForm.getRawValue(),
+        this.privateForm.getRawValue()
+      )
+      .subscribe({
+        next: () => {
+          this.isSignatureModalOpen.set(false);
+          this.layout.showToast(
+            'Sessão Assinada e Selada Digitalmente',
+            'Prontuário assinado com certificado ICP-Brasil / e-Psi (Registro Imutável).'
+          );
+        },
+        error: (err: unknown) => {
+          this.isSignatureModalOpen.set(false);
+          this.layout.showToast(
+            'Falha na Assinatura Digital',
+            AuthService.extractErrorMessage(err, 'Não foi possível assinar digitalmente a sessão.'),
+            'error'
+          );
+        },
+      });
   }
 }

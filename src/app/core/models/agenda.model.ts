@@ -22,6 +22,18 @@ export interface ScheduleSlotItem {
   readonly subtitle: string;
   readonly statusLabel?: string;
   readonly variant: AppointmentVariant;
+  readonly sessionDate?: string;
+}
+
+export interface CalendarMonthCell {
+  readonly date: Date;
+  readonly dateString: string;
+  readonly dayNumber: number;
+  readonly isCurrentMonth: boolean;
+  readonly isToday: boolean;
+  readonly isSelected: boolean;
+  readonly sessionsCount: number;
+  readonly summarySlots: readonly ScheduleSlotItem[];
 }
 
 export interface CalendarDayColumn {

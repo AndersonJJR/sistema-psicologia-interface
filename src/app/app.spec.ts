@@ -175,4 +175,34 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
     expect(completed).toBe(true);
     expect(store.profile().avatarUrl).toContain('/api/v1/uploads/psicologos/perfil.png');
   });
+
+  it('deve alternar entre os modos diario, semanal e mensal e gerar grade resumida do mes', () => {
+    // 1. Padrão deve ser semanal
+    expect(store.calendarViewMode()).toBe('semanal');
+
+    // 2. Alterna para diário
+    store.setCalendarViewMode('diario');
+    expect(store.calendarViewMode()).toBe('diario');
+    expect(store.currentDayLabel()).toBeTruthy();
+    const diaInicial = store.agendaSelectedDate().getDate();
+    store.navigateDay(1);
+    expect(store.agendaSelectedDate().getDate()).toBe(diaInicial + 1);
+
+    // 3. Alterna para mensal (resumida)
+    store.setCalendarViewMode('mensal');
+    expect(store.calendarViewMode()).toBe('mensal');
+    expect(store.currentMonthLabel()).toBeTruthy();
+    const cells = store.monthlyGrid();
+    expect(cells.length).toBeGreaterThanOrEqual(28);
+    expect(cells.some((c) => c.isToday)).toBe(true);
+
+    // Navega mês
+    store.navigateMonth(1);
+    expect(store.currentMonthOffset()).toBe(1);
+
+    // Reseta para hoje
+    store.resetToToday();
+    expect(store.currentMonthOffset()).toBe(0);
+    expect(store.agendaSelectedDate().toDateString()).toBe(new Date().toDateString());
+  });
 });

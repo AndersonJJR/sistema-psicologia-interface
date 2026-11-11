@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   CalendarViewMode,
@@ -68,8 +68,8 @@ import { TimetableGridComponent } from '../components/timetable-grid/timetable-g
           >
             <button
               type="button"
-              (click)="onNavigateWeek(-1)"
-              aria-label="Semana anterior"
+              (click)="onNavigate(-1)"
+              [attr.aria-label]="navigateBackLabel()"
               class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition cursor-pointer"
             >
               <span class="material-symbols-outlined text-[20px]">chevron_left</span>
@@ -79,13 +79,13 @@ import { TimetableGridComponent } from '../components/timetable-grid/timetable-g
                 calendar_today
               </span>
               <span class="font-label-lg text-label-lg text-on-surface font-semibold">
-                {{ store.currentWeekRangeLabel() }}
+                {{ currentDateDisplayLabel() }}
               </span>
             </div>
             <button
               type="button"
-              (click)="onNavigateWeek(1)"
-              aria-label="Próxima semana"
+              (click)="onNavigate(1)"
+              [attr.aria-label]="navigateForwardLabel()"
               class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition cursor-pointer"
             >
               <span class="material-symbols-outlined text-[20px]">chevron_right</span>
@@ -119,7 +119,12 @@ import { TimetableGridComponent } from '../components/timetable-grid/timetable-g
         [days]="store.agendaDays()"
         [hours]="store.agendaHours()"
         [slots]="store.scheduleSlots()"
+        [viewMode]="store.calendarViewMode()"
+        [selectedDate]="store.agendaSelectedDate()"
+        [monthlyGrid]="store.monthlyGrid()"
         (slotSelected)="onSlotSelected($event)"
+        (newSlotRequested)="onNewSlotRequested($event)"
+        (daySelectedFromMonth)="onDaySelectedFromMonth($event)"
       />
 
       <!-- New Appointment Modal -->
@@ -140,6 +145,31 @@ export class AgendaPageComponent implements OnInit {
 
   public readonly isModalOpen = signal<boolean>(false);
 
+  public readonly currentDateDisplayLabel = computed<string>(() => {
+    const mode = this.store.calendarViewMode();
+    if (mode === 'diario') {
+      return this.store.currentDayLabel();
+    }
+    if (mode === 'mensal') {
+      return this.store.currentMonthLabel();
+    }
+    return this.store.currentWeekRangeLabel();
+  });
+
+  public readonly navigateBackLabel = computed<string>(() => {
+    const mode = this.store.calendarViewMode();
+    if (mode === 'diario') return 'Dia anterior';
+    if (mode === 'mensal') return 'Mês anterior';
+    return 'Semana anterior';
+  });
+
+  public readonly navigateForwardLabel = computed<string>(() => {
+    const mode = this.store.calendarViewMode();
+    if (mode === 'diario') return 'Próximo dia';
+    if (mode === 'mensal') return 'Próximo mês';
+    return 'Próxima semana';
+  });
+
   public ngOnInit(): void {
     this.store.loadAgendamentosFromBackend();
   }
@@ -155,13 +185,33 @@ export class AgendaPageComponent implements OnInit {
     this.store.setCalendarViewMode(mode);
   }
 
+  public onNavigate(direction: -1 | 1): void {
+    const mode = this.store.calendarViewMode();
+    if (mode === 'diario') {
+      this.store.navigateDay(direction);
+    } else if (mode === 'mensal') {
+      this.store.navigateMonth(direction);
+    } else {
+      this.store.navigateWeek(direction);
+    }
+  }
+
   public onNavigateWeek(direction: -1 | 1): void {
     this.store.navigateWeek(direction);
   }
 
   public onResetToday(): void {
-    this.store.resetWeekToToday();
+    this.store.resetToToday();
     this.store.setCalendarViewMode('semanal');
+  }
+
+  public onDaySelectedFromMonth(date: Date): void {
+    this.store.selectDay(date);
+    this.store.setCalendarViewMode('diario');
+  }
+
+  public onNewSlotRequested(event: { hourSlot: string; dayIndex: number; date?: Date }): void {
+    this.openAppointmentModal();
   }
 
   public openAppointmentModal(): void {

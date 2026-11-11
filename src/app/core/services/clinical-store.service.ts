@@ -10,6 +10,7 @@ import {
   BilledSessionTransaction,
   BillingFilterType,
   CalendarDayColumn,
+  CalendarMonthCell,
   CalendarViewMode,
   ClinicalApproachKey,
   ClinicalApproachOption,
@@ -250,6 +251,56 @@ export class ClinicalStoreService {
   public readonly agendaDays = signal<readonly CalendarDayColumn[]>(
     ClinicalStoreService.getCurrentWeekDays(0)
   );
+  public readonly agendaSelectedDate = signal<Date>(new Date());
+  public readonly currentMonthOffset = signal<number>(0);
+
+  public readonly currentDayLabel = computed<string>(() => {
+    const d = this.agendaSelectedDate();
+    const days = [
+      'Domingo',
+      'Segunda-feira',
+      'Terça-feira',
+      'Quarta-feira',
+      'Quinta-feira',
+      'Sexta-feira',
+      'Sábado',
+    ];
+    const months = [
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ];
+    return `${days[d.getDay()]}, ${d.getDate()} de ${months[d.getMonth()]} de ${d.getFullYear()}`;
+  });
+
+  public readonly currentMonthLabel = computed<string>(() => {
+    const now = new Date();
+    const target = new Date(now.getFullYear(), now.getMonth() + this.currentMonthOffset(), 1);
+    const months = [
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ];
+    return `${months[target.getMonth()]} de ${target.getFullYear()}`;
+  });
 
   public readonly agendaHours = signal<readonly string[]>([
     '08:00',
@@ -302,6 +353,92 @@ export class ClinicalStoreService {
   private readonly scheduleSlotsState = signal<readonly ScheduleSlotItem[]>([]);
 
   public readonly scheduleSlots = this.scheduleSlotsState.asReadonly();
+
+  public readonly monthlyGrid = computed<readonly CalendarMonthCell[]>(() => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const targetMonthDate = new Date(
+      now.getFullYear(),
+      now.getMonth() + this.currentMonthOffset(),
+      1
+    );
+    const year = targetMonthDate.getFullYear();
+    const month = targetMonthDate.getMonth();
+
+    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Dom .. 6 = Sab
+    const daysInCurrentMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const cells: CalendarMonthCell[] = [];
+    const allSlots = this.scheduleSlotsState();
+
+    // Previous month padding days
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const dayNum = daysInPrevMonth - i;
+      const prevDate = new Date(year, month - 1, dayNum);
+      const dateString = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+      const slotsForDay = allSlots.filter((s) => s.sessionDate === dateString);
+      cells.push({
+        date: prevDate,
+        dateString,
+        dayNumber: dayNum,
+        isCurrentMonth: false,
+        isToday: dateString === todayStr,
+        isSelected: false,
+        sessionsCount: slotsForDay.length,
+        summarySlots: slotsForDay,
+      });
+    }
+
+    // Current month days
+    const selDate = this.agendaSelectedDate();
+    const selDateStr = `${selDate.getFullYear()}-${String(selDate.getMonth() + 1).padStart(2, '0')}-${String(selDate.getDate()).padStart(2, '0')}`;
+
+    for (let day = 1; day <= daysInCurrentMonth; day++) {
+      const cellDate = new Date(year, month, day);
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayOfWeek = cellDate.getDay();
+      const weekdayIndex = dayOfWeek >= 1 && dayOfWeek <= 5 ? dayOfWeek - 1 : -1;
+
+      const slotsForDay = allSlots.filter((s) => {
+        if (s.sessionDate) {
+          return s.sessionDate === dateString;
+        }
+        return weekdayIndex >= 0 && s.dayIndex === weekdayIndex;
+      });
+
+      cells.push({
+        date: cellDate,
+        dateString,
+        dayNumber: day,
+        isCurrentMonth: true,
+        isToday: dateString === todayStr,
+        isSelected: dateString === selDateStr,
+        sessionsCount: slotsForDay.length,
+        summarySlots: slotsForDay,
+      });
+    }
+
+    // Next month padding days to complete 35 or 42 cells
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+      const nextDate = new Date(year, month + 1, i);
+      const dateString = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      const slotsForDay = allSlots.filter((s) => s.sessionDate === dateString);
+      cells.push({
+        date: nextDate,
+        dateString,
+        dayNumber: i,
+        isCurrentMonth: false,
+        isToday: dateString === todayStr,
+        isSelected: false,
+        sessionsCount: slotsForDay.length,
+        summarySlots: slotsForDay,
+      });
+    }
+
+    return cells;
+  });
   public readonly agendamentosList = signal<readonly AgendamentoApiDto[]>([]);
   public readonly selectedAgendamentoId = signal<string | null>(null);
 
@@ -446,7 +583,27 @@ export class ClinicalStoreService {
   }
 
   public resetWeekToToday(): void {
+    this.resetToToday();
+  }
+
+  public navigateDay(direction: -1 | 1): void {
+    const current = new Date(this.agendaSelectedDate());
+    current.setDate(current.getDate() + direction);
+    this.agendaSelectedDate.set(current);
+  }
+
+  public navigateMonth(direction: -1 | 1): void {
+    this.currentMonthOffset.update((prev) => prev + direction);
+  }
+
+  public selectDay(date: Date): void {
+    this.agendaSelectedDate.set(new Date(date));
+  }
+
+  public resetToToday(): void {
     this.currentWeekOffset = 0;
+    this.currentMonthOffset.set(0);
+    this.agendaSelectedDate.set(new Date());
     this.currentWeekRangeLabel.set(ClinicalStoreService.getCurrentWeekRangeLabel(0));
     this.agendaDays.set(ClinicalStoreService.getCurrentWeekDays(0));
   }
@@ -1017,6 +1174,10 @@ export class ClinicalStoreService {
     const hourStr = String(hourNum).padStart(2, '0');
     const hourSlot = `${hourStr}:00`;
     const timeRange = `${hourStr}:00 - ${hourStr}:50`;
+    const yyyy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const sessionDate = `${yyyy}-${mm}-${dd}`;
 
     let variant: AppointmentVariant = 'telehealth-standard';
     let subtitle = 'Telessaúde';
@@ -1050,10 +1211,20 @@ export class ClinicalStoreService {
       subtitle,
       statusLabel,
       variant,
+      sessionDate,
     };
   }
 
   public addScheduleSlot(payload: NewAppointmentPayload): void {
+    const now = new Date();
+    const diffToMonday = (now.getDay() === 0 ? -6 : 1) - now.getDay();
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + diffToMonday + Math.max(0, Math.min(4, payload.dayIndex)));
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(targetDate.getDate()).padStart(2, '0');
+    const sessionDate = `${yyyy}-${mm}-${dd}`;
+
     const newSlot: ScheduleSlotItem = {
       id: `slot-${Date.now()}`,
       dayIndex: payload.dayIndex,
@@ -1066,6 +1237,7 @@ export class ClinicalStoreService {
           : `Presencial • ${payload.roomOrNotes || 'Sala 1'}`,
       variant:
         payload.modality === 'Telessaúde' ? 'telehealth-standard' : 'presential-today-highlight',
+      sessionDate,
     };
 
     this.scheduleSlotsState.update((slots) => [

@@ -22,57 +22,12 @@ import { ProfileFormControls } from '../../containers/profile-page.component';
           </div>
           <div>
             <h2 class="font-headline-sm text-headline-sm text-on-surface">
-              Credenciamento e-Psi &amp; Conselho de Classe
+              Conselho de Classe &amp; Atuação Profissional
             </h2>
             <p class="font-body-sm text-body-sm text-on-surface-variant">
-              Conformidade obrigatória para atendimento psicológico online
+              Registro profissional regularizado e abordagem clínica principal
             </p>
           </div>
-        </div>
-        <span
-          class="hidden sm:inline-flex font-label-sm text-label-sm uppercase tracking-wider text-secondary bg-secondary-container/40 px-2.5 py-1 rounded-full font-bold"
-        >
-          {{ auditBadge() }}
-        </span>
-      </div>
-
-      <!-- Banner de Destaque e-Psi Válido -->
-      <div
-        class="rounded-xl bg-gradient-to-r from-secondary-container/40 via-surface-container-low to-surface-container-low p-space-md shadow-sm"
-      >
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
-          <div class="flex items-start gap-space-md">
-            <div
-              class="h-10 w-10 shrink-0 rounded-full bg-secondary flex items-center justify-center text-on-secondary shadow-sm"
-            >
-              <span class="material-symbols-outlined text-[22px]">check_circle</span>
-            </div>
-            <div class="space-y-0.5">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-label-lg text-label-lg font-bold text-on-surface">
-                  {{ ePsiCode() }}
-                </span>
-                <span
-                  class="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 font-label-sm text-label-sm font-semibold text-on-secondary shadow-sm"
-                >
-                  <span class="material-symbols-outlined text-[13px]">health_and_safety</span>
-                  {{ ePsiStatusLabel() }}
-                </span>
-              </div>
-              <p class="font-body-sm text-body-sm text-on-surface-variant">
-                {{ ePsiDescription() }}
-              </p>
-            </div>
-          </div>
-          <a
-            class="inline-flex items-center gap-1.5 shrink-0 font-label-md text-label-md text-primary font-semibold hover:underline bg-surface-container-lowest px-space-md py-2 rounded-lg shadow-sm"
-            href="https://e-psi.cfp.org.br"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <span class="material-symbols-outlined text-[16px]">open_in_new</span>
-            Verificar autenticidade no CFP
-          </a>
         </div>
       </div>
 
@@ -159,10 +114,6 @@ import { ProfileFormControls } from '../../containers/profile-page.component';
 export class EpsiCredentialCardComponent {
   public readonly formGroup = input.required<FormGroup<ProfileFormControls>>();
   public readonly approaches = input.required<readonly ClinicalApproachOption[]>();
-  public readonly ePsiCode = input.required<string>();
-  public readonly ePsiStatusLabel = input.required<string>();
-  public readonly ePsiDescription = input.required<string>();
-  public readonly auditBadge = input.required<string>();
   public readonly crpJurisdiction = input.required<string>();
   public readonly crpActiveStatus = input.required<string>();
 

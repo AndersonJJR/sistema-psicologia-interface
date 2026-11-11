@@ -53,7 +53,7 @@ interface SignInFormControls {
                 id="signin-email"
                 type="email"
                 formControlName="email"
-                placeholder="dra.juliana@psicosafe.com.br"
+                placeholder="seu.email@dominio.com"
                 [class.border-error]="isFieldInvalid('email')"
                 class="clinical-input w-full pl-9 pr-3 h-[42px] text-xs rounded-lg border border-[#cbd5e1] bg-white text-[#0b1c30] placeholder:text-slate-400 transition-all focus:outline-none focus:border-[#005c55] focus:ring-2 focus:ring-[#005c55]/20"
               />
@@ -212,15 +212,15 @@ export class SignInFormComponent {
   public readonly showPassword = signal<boolean>(false);
 
   public readonly form = new FormGroup<SignInFormControls>({
-    email: new FormControl<string>('dra.juliana@psicosafe.com.br', {
+    email: new FormControl<string>('', {
       nonNullable: true,
       validators: [Validators.required, Validators.email],
     }),
-    password: new FormControl<string>('PsicoSafe@2026', {
+    password: new FormControl<string>('', {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(6)],
     }),
-    rememberMe: new FormControl<boolean>(true, { nonNullable: true }),
+    rememberMe: new FormControl<boolean>(false, { nonNullable: true }),
   });
 
   public togglePasswordVisibility(): void {

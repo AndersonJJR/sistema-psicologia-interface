@@ -156,15 +156,11 @@ export class AgendaPageComponent implements OnInit {
   }
 
   public onNavigateWeek(direction: -1 | 1): void {
-    if (direction === -1) {
-      this.store.currentWeekRangeLabel.set('13 a 19 de Outubro, 2024');
-    } else {
-      this.store.currentWeekRangeLabel.set('27 Out a 02 Nov, 2024');
-    }
+    this.store.navigateWeek(direction);
   }
 
   public onResetToday(): void {
-    this.store.currentWeekRangeLabel.set('20 a 26 de Outubro, 2024');
+    this.store.resetWeekToToday();
     this.store.setCalendarViewMode('semanal');
   }
 

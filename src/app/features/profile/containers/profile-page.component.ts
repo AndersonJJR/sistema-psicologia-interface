@@ -71,10 +71,6 @@ export interface ProfileFormControls {
           <app-epsi-credential-card
             [formGroup]="profileForm"
             [approaches]="store.clinicalApproaches()"
-            [ePsiCode]="store.profile().ePsiCode"
-            [ePsiStatusLabel]="store.profile().ePsiStatusLabel"
-            [ePsiDescription]="store.profile().ePsiDescription"
-            [auditBadge]="store.profile().ePsiAuditBadge"
             [crpJurisdiction]="store.profile().crpJurisdiction"
             [crpActiveStatus]="store.profile().crpActiveStatus"
           />
@@ -90,7 +86,6 @@ export class ProfilePageComponent implements OnInit {
   public readonly layout = inject(LayoutService);
 
   private lastSaveTriggerCount = this.layout.profileSaveTrigger();
-  private lastRenewTriggerCount = this.layout.epsiRenewTrigger();
 
   public readonly profileForm = new FormGroup<ProfileFormControls>({
     fullName: new FormControl<string>(this.store.profile().fullName, {
@@ -137,14 +132,6 @@ export class ProfilePageComponent implements OnInit {
         this.handleSaveProfile();
       }
     });
-
-    effect(() => {
-      const renewCount = this.layout.epsiRenewTrigger();
-      if (renewCount !== this.lastRenewTriggerCount) {
-        this.lastRenewTriggerCount = renewCount;
-        this.handleRenewEpsi();
-      }
-    });
   }
 
   public ngOnInit(): void {
@@ -189,26 +176,5 @@ export class ProfilePageComponent implements OnInit {
           );
         },
       });
-  }
-
-  public handleRenewEpsi(): void {
-    this.layout.setEpsiRenewing(true);
-    this.store.renewEpsiCertificateOnBackend().subscribe({
-      next: () => {
-        this.layout.setEpsiRenewing(false);
-        this.layout.showToast(
-          'e-Psi Sincronizado',
-          'Chave criptográfica e autorização e-Psi renovadas e auditadas junto ao Conselho Regional.'
-        );
-      },
-      error: (err: unknown) => {
-        this.layout.setEpsiRenewing(false);
-        this.layout.showToast(
-          'Falha ao Renovar e-Psi',
-          AuthService.extractErrorMessage(err, 'Não foi possível renovar o certificado e-Psi.'),
-          'error'
-        );
-      },
-    });
   }
 }

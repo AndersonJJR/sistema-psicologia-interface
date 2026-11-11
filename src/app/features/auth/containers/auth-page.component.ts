@@ -206,7 +206,7 @@ import { SignUpFormComponent } from '../components/sign-up-form/sign-up-form.com
             <span
               class="hidden sm:inline-block ml-2 px-2 py-0.5 text-[11px] font-semibold tracking-wide bg-teal-50 text-[#005c55] border border-teal-200/60 rounded-full"
             >
-              CLÍNICA &amp; TELEPSI
+              CLÍNICA &amp; TELESSAÚDE
             </span>
           </div>
         </div>
@@ -360,7 +360,6 @@ export class AuthPageComponent {
         cpf: payload.cpf.trim(),
         telefone: payload.phone.trim(),
         crp: crpFormatted,
-        numeroEpsi: payload.numeroEpsi.trim(),
         senha: payload.password,
       })
       .subscribe({
@@ -372,7 +371,7 @@ export class AuthPageComponent {
             phone: payload.phone.trim(),
           });
           this.layout.showToast(
-            'Credenciamento e-Psi Validado',
+            'Cadastro Profissional Realizado',
             `Conta profissional de ${payload.fullName} criada com criptografia ativa.`
           );
           void this.router.navigate(['/perfil-profissional']);

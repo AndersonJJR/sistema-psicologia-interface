@@ -26,7 +26,7 @@ import { SidebarNavItem } from '../../../core/models';
                 PsicoSafe
               </span>
               <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-                Clínica &amp; Telepsi
+                Gestão Clínica
               </span>
             </div>
           </div>
@@ -37,7 +37,7 @@ import { SidebarNavItem } from '../../../core/models';
                 alt="Logo PsicoSafe"
                 class="h-7 w-auto object-contain"
                 [src]="logoUrl()"
-                title="PsicoSafe Clínica & Telepsi"
+                title="PsicoSafe Gestão Clínica"
               />
             </div>
           </div>
@@ -47,7 +47,7 @@ import { SidebarNavItem } from '../../../core/models';
               alt="Logo PsicoSafe"
               class="h-8 w-auto object-contain"
               [src]="logoUrl()"
-              title="PsicoSafe Clínica & Telepsi"
+              title="PsicoSafe Gestão Clínica"
             />
           </div>
         }
@@ -155,21 +155,6 @@ import { SidebarNavItem } from '../../../core/models';
                   <span>Salvar Alterações</span>
                 }
               </button>
-              <button
-                type="button"
-                id="btn-renew-epsi"
-                [disabled]="renewingEpsi()"
-                (click)="renewEpsi.emit()"
-                class="w-full h-9 rounded-lg bg-surface-container text-primary font-label-sm text-label-sm flex items-center justify-center gap-space-xs hover:bg-surface-container-high transition-colors cursor-pointer disabled:opacity-60"
-              >
-                @if (renewingEpsi()) {
-                  <span class="material-symbols-outlined text-[16px] animate-spin">sync</span>
-                  <span>Verificando no CFP...</span>
-                } @else {
-                  <span class="material-symbols-outlined text-[16px]">sync</span>
-                  <span>Renovar Certificado e-Psi</span>
-                }
-              </button>
               <p class="font-label-sm text-[11px] text-center text-on-surface-variant pt-0.5 leading-tight">
                 {{ lastModifiedLabel() }}
               </p>
@@ -193,21 +178,6 @@ import { SidebarNavItem } from '../../../core/models';
                   {{ savingProfile() ? 'refresh' : 'save' }}
                 </span>
               </button>
-              <button
-                type="button"
-                id="btn-renew-epsi"
-                title="Renovar Certificado e-Psi"
-                [disabled]="renewingEpsi()"
-                (click)="renewEpsi.emit()"
-                class="w-10 h-10 rounded-lg bg-surface-container text-primary flex items-center justify-center hover:bg-surface-container-high transition-colors cursor-pointer"
-              >
-                <span
-                  class="material-symbols-outlined text-[18px]"
-                  [class.animate-spin]="renewingEpsi()"
-                >
-                  sync
-                </span>
-              </button>
               <div
                 class="w-2 h-2 rounded-full bg-secondary"
                 [title]="lastModifiedLabel()"
@@ -226,13 +196,11 @@ export class SidebarComponent {
   public readonly compact16 = input<boolean>(false);
   public readonly showProfileActions = input<boolean>(false);
   public readonly savingProfile = input<boolean>(false);
-  public readonly renewingEpsi = input<boolean>(false);
   public readonly lastModifiedLabel = input<string>('');
   public readonly logoUrl = input.required<string>();
 
   public readonly toggleSidebar = output<void>();
   public readonly saveProfile = output<void>();
-  public readonly renewEpsi = output<void>();
 
   public readonly asideClasses = computed<string>(() => {
     const base =

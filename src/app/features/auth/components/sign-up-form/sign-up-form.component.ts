@@ -9,7 +9,6 @@ interface SignUpFormControls {
   phone: FormControl<string>;
   crpRegion: FormControl<string>;
   crpNumber: FormControl<string>;
-  numeroEpsi: FormControl<string>;
   password: FormControl<string>;
   acceptTerms: FormControl<boolean>;
 }
@@ -143,7 +142,7 @@ interface SignUpFormControls {
             }
           </div>
 
-          <div class="grid grid-cols-3 gap-2">
+          <div class="grid grid-cols-2 gap-2">
             <div>
               <label for="signup-crp-region" class="block text-xs font-medium text-[#0b1c30] mb-1">
                 Região CRP *
@@ -167,19 +166,6 @@ interface SignUpFormControls {
                 formControlName="crpNumber"
                 placeholder="142980"
                 [class.border-error]="isFieldInvalid('crpNumber')"
-                class="clinical-input w-full px-3 h-[38px] text-xs rounded-lg border border-[#cbd5e1] bg-white text-[#0b1c30] placeholder:text-slate-400 transition-all focus:outline-none focus:border-[#005c55] focus:ring-2 focus:ring-[#005c55]/20"
-              />
-            </div>
-            <div>
-              <label for="signup-epsi" class="block text-xs font-medium text-[#0b1c30] mb-1">
-                Código e-Psi *
-              </label>
-              <input
-                id="signup-epsi"
-                type="text"
-                formControlName="numeroEpsi"
-                placeholder="EPSI-2026"
-                [class.border-error]="isFieldInvalid('numeroEpsi')"
                 class="clinical-input w-full px-3 h-[38px] text-xs rounded-lg border border-[#cbd5e1] bg-white text-[#0b1c30] placeholder:text-slate-400 transition-all focus:outline-none focus:border-[#005c55] focus:ring-2 focus:ring-[#005c55]/20"
               />
             </div>
@@ -334,10 +320,6 @@ export class SignUpFormComponent {
     crpNumber: new FormControl<string>('', {
       nonNullable: true,
       validators: [Validators.required],
-    }),
-    numeroEpsi: new FormControl<string>('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(4)],
     }),
     password: new FormControl<string>('', {
       nonNullable: true,

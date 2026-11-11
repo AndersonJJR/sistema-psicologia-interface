@@ -30,10 +30,6 @@ export interface PsychologistProfile {
   readonly cpfValidatedLabel: string;
   readonly phone: string;
   readonly avatarUrl: string;
-  readonly ePsiCode: string;
-  readonly ePsiStatusLabel: string;
-  readonly ePsiDescription: string;
-  readonly ePsiAuditBadge: string;
   readonly crpRegistration: string;
   readonly crpJurisdiction: string;
   readonly crpActiveStatus: string;
@@ -47,11 +43,9 @@ export interface PsicologoApiDto {
   readonly nome: string;
   readonly cpf: string;
   readonly crp: string;
-  readonly numeroEpsi: string;
   readonly email: string;
   readonly telefone: string;
   readonly abordagemClinica: ClinicalApproachKey;
-  readonly ultimaRenovacaoEpsi: string | null;
   readonly ativo: boolean;
   readonly deletedAt: string | null;
 }
@@ -60,7 +54,6 @@ export interface PsicologoRequestDto {
   readonly nome: string;
   readonly cpf: string;
   readonly crp: string;
-  readonly numeroEpsi: string;
   readonly email: string;
   readonly telefone: string;
   readonly abordagemClinica?: ClinicalApproachKey;

@@ -104,7 +104,7 @@ export const routes: Routes = [
       },
       {
         path: 'perfil-profissional',
-        title: 'PsicoSafe | Perfil e Habilitação Profissional (e-Psi)',
+        title: 'PsicoSafe | Perfil e Habilitação Profissional',
         loadComponent: () =>
           import('./features/profile/containers/profile-page.component').then(
             (m) => m.ProfilePageComponent

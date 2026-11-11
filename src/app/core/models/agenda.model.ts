@@ -57,7 +57,6 @@ export interface AgendamentoApiDto {
   readonly idAgendamento: string;
   readonly idPsicologo: string;
   readonly nomePsicologo: string;
-  readonly numeroEpsiPsicologo: string;
   readonly idPaciente: string;
   readonly nomePaciente: string;
   readonly contatoEmergenciaNome: string;

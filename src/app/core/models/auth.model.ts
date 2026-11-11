@@ -15,7 +15,6 @@ export interface RegisterCredentials {
   readonly phone: string;
   readonly crpRegion: string;
   readonly crpNumber: string;
-  readonly numeroEpsi: string;
   readonly password: string;
   readonly acceptTerms: boolean;
 }
@@ -32,7 +31,6 @@ export interface RegistroPsicologoRequestDto {
   readonly senha: string;
   readonly cpf?: string;
   readonly telefone?: string;
-  readonly numeroEpsi?: string;
 }
 
 export interface TokenResponseDto {

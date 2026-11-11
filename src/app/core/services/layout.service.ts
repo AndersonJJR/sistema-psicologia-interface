@@ -9,9 +9,7 @@ export class LayoutService {
   private readonly activeRoutePathState = signal<string>('/agenda');
   private readonly toastState = signal<ToastMessage | null>(null);
   private readonly profileSaveTriggerState = signal<number>(0);
-  private readonly epsiRenewTriggerState = signal<number>(0);
   private readonly profileSavingState = signal<boolean>(false);
-  private readonly epsiRenewingState = signal<boolean>(false);
 
   private toastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -19,9 +17,7 @@ export class LayoutService {
   public readonly activeRoutePath = this.activeRoutePathState.asReadonly();
   public readonly activeToast = this.toastState.asReadonly();
   public readonly profileSaveTrigger = this.profileSaveTriggerState.asReadonly();
-  public readonly epsiRenewTrigger = this.epsiRenewTriggerState.asReadonly();
   public readonly isSavingProfile = this.profileSavingState.asReadonly();
-  public readonly isRenewingEpsi = this.epsiRenewingState.asReadonly();
 
   public readonly navItems = signal<readonly SidebarNavItem[]>([
     {
@@ -103,16 +99,8 @@ export class LayoutService {
     this.profileSaveTriggerState.update((n) => n + 1);
   }
 
-  public requestEpsiRenew(): void {
-    this.epsiRenewTriggerState.update((n) => n + 1);
-  }
-
   public setProfileSaving(saving: boolean): void {
     this.profileSavingState.set(saving);
-  }
-
-  public setEpsiRenewing(renewing: boolean): void {
-    this.epsiRenewingState.set(renewing);
   }
 
   public showToast(title: string, description: string, icon = 'task_alt', durationMs = 4000): void {

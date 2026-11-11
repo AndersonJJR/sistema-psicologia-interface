@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -21,23 +21,20 @@ import { ToastNotificationComponent } from '../components/toast/toast-notificati
       [compact16]="layout.isCompact16Route()"
       [showProfileActions]="layout.isProfileRoute()"
       [savingProfile]="layout.isSavingProfile()"
-      [renewingEpsi]="layout.isRenewingEpsi()"
       [lastModifiedLabel]="store.profile().lastModifiedLabel"
       [logoUrl]="store.logoUrl"
       (toggleSidebar)="layout.toggleSidebar()"
       (saveProfile)="layout.requestProfileSave()"
-      (renewEpsi)="layout.requestEpsiRenew()"
     />
 
     <div [class]="contentWrapperClasses()">
       <app-topbar
         [collapsed]="layout.isSidebarCollapsed()"
         [compact16]="layout.isCompact16Route()"
-        [hideTopbarLogo]="layout.isProfileRoute()"
         [logoUrl]="store.logoUrl"
         [dateLabel]="store.currentDateHeaderLabel()"
-        [professionalName]="store.profile().shortDisplayName"
-        [professionalCrp]="'CRP ' + store.profile().crpRegistration.split(' ')[0]"
+        [professionalName]="store.profile().shortDisplayName || 'Psicólogo(a)'"
+        [professionalCrp]="store.profile().crpRegistration ? 'CRP ' + store.profile().crpRegistration.split(' ')[0] : 'CFP Regular'"
       />
 
       <main class="w-full pt-16 bg-background min-h-screen px-gutter py-space-lg">
@@ -51,7 +48,7 @@ import { ToastNotificationComponent } from '../components/toast/toast-notificati
     />
   `,
 })
-export class AppShellComponent {
+export class AppShellComponent implements OnInit {
   public readonly layout = inject(LayoutService);
   public readonly store = inject(ClinicalStoreService);
   private readonly router = inject(Router);
@@ -78,5 +75,9 @@ export class AppShellComponent {
       .subscribe((event) => {
         this.layout.setActiveRoutePath(event.urlAfterRedirects);
       });
+  }
+
+  public ngOnInit(): void {
+    this.store.loadProfileFromBackend();
   }
 }

@@ -6,6 +6,8 @@ import { App } from './app';
 import { routes } from './app.routes';
 import { AuthService } from './core/services/auth.service';
 import { ClinicalStoreService } from './core/services/clinical-store.service';
+import { SignInFormComponent } from './features/auth/components/sign-in-form/sign-in-form.component';
+import { TopbarComponent } from './shared/components/topbar/topbar.component';
 
 describe('Sistema Psicologia Interface — Integração Front-End & Back-End', () => {
   let httpMock: HttpTestingController;
@@ -14,7 +16,7 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App],
+      imports: [App, SignInFormComponent, TopbarComponent],
       providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
@@ -37,7 +39,7 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
   it('deve autenticar via AuthService e armazenar a sessão JWT com RBAC', () => {
     let completed = false;
     authService
-      .login({ login: 'dra.juliana@psicosafe.com.br', senha: 'PsicoSafe@2026' })
+      .login({ login: 'usuario@psicosafe.com.br', senha: 'MinhaSenhaSegura' })
       .subscribe((res) => {
         expect(res.token).toBe('jwt-token-mock');
         expect(authService.isAuthenticated()).toBe(true);
@@ -52,12 +54,51 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
       token: 'jwt-token-mock',
       tipo: 'Bearer',
       idUsuario: '11111111-1111-1111-1111-111111111111',
-      login: 'dra.juliana@psicosafe.com.br',
+      login: 'usuario@psicosafe.com.br',
       perfil: 'PSICOLOGO',
       idPsicologoVinculado: '22222222-2222-2222-2222-222222222222',
     });
 
     expect(completed).toBe(true);
+  });
+
+  it('deve iniciar o formulário de login com campos vazios aguardando entrada do usuário', () => {
+    const fixture = TestBed.createComponent(SignInFormComponent);
+    const comp = fixture.componentInstance;
+    expect(comp.form.controls.email.value).toBe('');
+    expect(comp.form.controls.password.value).toBe('');
+  });
+
+  it('deve gerar data atual dinamicamente para o cabeçalho e semanas da agenda', () => {
+    const currentDate = store.currentDateHeaderLabel();
+    const currentYear = String(new Date().getFullYear());
+    expect(currentDate).toContain(currentYear);
+    expect(currentDate).not.toContain('24 de Maio de 2024');
+
+    const weekLabel = ClinicalStoreService.getCurrentWeekRangeLabel(0);
+    expect(weekLabel).toContain(currentYear);
+
+    const days = ClinicalStoreService.getCurrentWeekDays(0);
+    expect(days.length).toBe(5);
+  });
+
+  it('deve abrir e fechar o modal de calendário ao interagir na topbar', () => {
+    const fixture = TestBed.createComponent(TopbarComponent);
+    fixture.componentRef.setInput('collapsed', false);
+    fixture.componentRef.setInput('logoUrl', 'http://logo.png');
+    fixture.componentRef.setInput('dateLabel', store.currentDateHeaderLabel());
+    fixture.componentRef.setInput('professionalName', 'Dr. Teste');
+    fixture.componentRef.setInput('professionalCrp', 'CRP 06/1234');
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    expect(comp.isCalendarOpen()).toBe(false);
+
+    comp.toggleCalendarModal();
+    expect(comp.isCalendarOpen()).toBe(true);
+
+    comp.closeCalendarModal();
+    expect(comp.isCalendarOpen()).toBe(false);
   });
 
   it('deve converter datas de nascimento entre formato brasileiro e ISO-8601 para a API', () => {

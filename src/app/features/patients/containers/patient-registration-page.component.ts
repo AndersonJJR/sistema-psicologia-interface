@@ -36,16 +36,30 @@ export interface PatientRegistrationFormControls {
       >
         <div class="flex items-center gap-space-md min-w-0">
           <div
-            class="relative w-16 h-16 rounded-full overflow-hidden bg-surface-container-high shrink-0 shadow-inner"
+            class="relative w-16 h-16 rounded-full overflow-hidden bg-surface-container-high shrink-0 shadow-inner group cursor-pointer ring-2 ring-primary/20 hover:ring-primary transition-all"
+            (click)="patientFileInput.click()"
+            title="Clique para alterar a foto do paciente"
           >
             <img
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
               alt="Foto do Paciente"
               [src]="store.patientRecord().avatarUrl"
             />
+            <div
+              class="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <span class="material-symbols-outlined text-white text-[18px]">photo_camera</span>
+            </div>
             <span
               class="absolute bottom-0 right-0 w-4 h-4 bg-secondary rounded-full ring-2 ring-surface-container-lowest"
             ></span>
+            <input
+              #patientFileInput
+              type="file"
+              accept="image/*"
+              class="hidden"
+              (change)="onPatientFileSelected($event)"
+            />
           </div>
           <div class="flex flex-col min-w-0">
             <div class="flex items-center gap-space-xs flex-wrap">
@@ -240,6 +254,41 @@ export class PatientRegistrationPageComponent implements OnInit {
   public onPrintRecord(): void {
     if (typeof window !== 'undefined') {
       window.print();
+    }
+  }
+
+  public onPatientFileSelected(event: Event): void {
+    const inputEl = event.target as HTMLInputElement;
+    if (inputEl.files && inputEl.files[0]) {
+      const file = inputEl.files[0];
+      const patientId = this.store.patientRecord().id;
+      if (!patientId || this.store.isCreatingNewPatient()) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.store.setPatientAvatarPreview(e.target?.result as string);
+          this.layout.showToast('Foto Carregada', 'Pré-visualização da foto definida para o novo paciente.');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.layout.showToast('Enviando Imagem', 'Fazendo upload da foto do paciente...', 'sync');
+        this.store.uploadPatientAvatar(patientId, file).subscribe({
+          next: (res) => {
+            this.layout.showToast(
+              'Foto Atualizada',
+              res.mensagem || 'Foto do paciente salva com sucesso.',
+              'check_circle'
+            );
+          },
+          error: (err: unknown) => {
+            this.layout.showToast(
+              'Erro no Upload',
+              AuthService.extractErrorMessage(err, 'Falha ao enviar arquivo de imagem do paciente.'),
+              'error'
+            );
+          },
+        });
+      }
+      inputEl.value = '';
     }
   }
 

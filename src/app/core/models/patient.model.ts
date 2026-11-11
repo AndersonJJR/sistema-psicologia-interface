@@ -53,6 +53,7 @@ export interface PacienteApiDto {
   readonly contatoEmergenciaNome: string;
   readonly contatoEmergenciaTelefone: string;
   readonly enderecoLocalSessao: string;
+  readonly avatarUrl?: string | null;
   readonly ativo: boolean;
   readonly deletedAt: string | null;
 }

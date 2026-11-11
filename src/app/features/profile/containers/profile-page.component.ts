@@ -66,6 +66,7 @@ export interface ProfileFormControls {
             [formGroup]="profileForm"
             [avatarUrl]="store.profile().avatarUrl"
             [cpfValidatedLabel]="store.profile().cpfValidatedLabel"
+            (avatarFileSelected)="onUploadAvatar($event)"
           />
 
           <app-epsi-credential-card
@@ -176,5 +177,25 @@ export class ProfilePageComponent implements OnInit {
           );
         },
       });
+  }
+
+  public onUploadAvatar(file: File): void {
+    this.layout.showToast('Enviando Imagem', 'Fazendo upload da nova foto de perfil...', 'sync');
+    this.store.uploadPsychologistAvatar(file).subscribe({
+      next: (res) => {
+        this.layout.showToast(
+          'Foto Atualizada',
+          res.mensagem || 'Nova foto de perfil salva com sucesso no sistema.',
+          'check_circle'
+        );
+      },
+      error: (err: unknown) => {
+        this.layout.showToast(
+          'Erro no Upload',
+          AuthService.extractErrorMessage(err, 'Falha ao enviar arquivo de imagem.'),
+          'error'
+        );
+      },
+    });
   }
 }

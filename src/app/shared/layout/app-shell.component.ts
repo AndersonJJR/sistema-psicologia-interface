@@ -35,6 +35,7 @@ import { ToastNotificationComponent } from '../components/toast/toast-notificati
         [dateLabel]="store.currentDateHeaderLabel()"
         [professionalName]="store.profile().shortDisplayName || 'Psicólogo(a)'"
         [professionalCrp]="store.profile().crpRegistration ? 'CRP ' + store.profile().crpRegistration.split(' ')[0] : 'CFP Regular'"
+        [avatarUrl]="store.profile().avatarUrl"
       />
 
       <main class="w-full pt-16 bg-background min-h-screen px-gutter py-space-lg">

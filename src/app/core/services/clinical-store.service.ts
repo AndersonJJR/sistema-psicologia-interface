@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, switchMap, tap } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap, tap, throwError } from 'rxjs';
 import {
   ActiveBillingConciliation,
   AgendamentoApiDto,
@@ -502,6 +502,79 @@ export class ClinicalStoreService {
     );
   }
 
+  public uploadPsychologistAvatar(file: File): Observable<{ url: string; mensagem: string }> {
+    const idPsicologo = this.authService.currentPsychologistId() ?? this.profileState().id;
+    const resolveId$ = idPsicologo
+      ? of(idPsicologo)
+      : this.http.get<PsicologoApiDto[]>(`${this.apiBaseUrl}/psicologos`).pipe(
+          map((list) => list[0]?.idPsicologo ?? null),
+          catchError(() => of(null))
+        );
+
+    return resolveId$.pipe(
+      switchMap((id) => {
+        if (!id) {
+          return throwError(() => new Error('ID do psicólogo não encontrado para upload.'));
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+
+        return this.http
+          .post<{ url: string; mensagem: string }>(
+            `${this.apiBaseUrl}/uploads/psicologo/${id}`,
+            formData
+          )
+          .pipe(
+            tap((res) => {
+              const fullUrl = res.url.startsWith('http') ? res.url : `http://localhost:8080${res.url}`;
+              this.profileState.update((prev) => ({
+                ...prev,
+                avatarUrl: fullUrl,
+                lastModifiedLabel: 'Foto de perfil atualizada',
+              }));
+            })
+          );
+      })
+    );
+  }
+
+  public uploadPatientAvatar(
+    idPaciente: string,
+    file: File
+  ): Observable<{ url: string; mensagem: string }> {
+    const targetId = idPaciente || this.patientRecordState().id;
+    if (!targetId) {
+      return throwError(() => new Error('ID do paciente não encontrado para upload.'));
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http
+      .post<{ url: string; mensagem: string }>(
+        `${this.apiBaseUrl}/uploads/paciente/${targetId}`,
+        formData
+      )
+      .pipe(
+        tap((res) => {
+          const fullUrl = res.url.startsWith('http') ? res.url : `http://localhost:8080${res.url}`;
+          this.patientRecordState.update((prev) => ({
+            ...prev,
+            avatarUrl: fullUrl,
+          }));
+          this.patientsList.update((list) =>
+            list.map((p) => (p.idPaciente === targetId ? { ...p, avatarUrl: fullUrl } : p))
+          );
+        })
+      );
+  }
+
+  public setPatientAvatarPreview(url: string): void {
+    this.patientRecordState.update((prev) => ({
+      ...prev,
+      avatarUrl: url,
+    }));
+  }
+
   private applyPsicologoDto(dto: PsicologoApiDto): void {
     const words = dto.nome.trim().split(/\s+/);
     const shortDisplayName =
@@ -513,6 +586,9 @@ export class ClinicalStoreService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
     const approach = (dto.abordagemClinica || 'tcc') as ClinicalApproachKey;
+    const avatar = dto.avatarUrl
+      ? (dto.avatarUrl.startsWith('http') ? dto.avatarUrl : `http://localhost:8080${dto.avatarUrl}`)
+      : undefined;
 
     this.profileState.update((prev) => ({
       ...prev,
@@ -525,6 +601,7 @@ export class ClinicalStoreService {
       crpRegistration: dto.crp,
       crpActiveStatus: dto.ativo ? 'Ativo e Regular' : 'Inativo',
       clinicalApproach: approach,
+      avatarUrl: avatar ?? prev.avatarUrl,
       lastModifiedLabel: 'Sincronizado com servidor CFP',
       telepsychologyConfig: {
         ...prev.telepsychologyConfig,
@@ -693,6 +770,9 @@ export class ClinicalStoreService {
       dto.dataNascimento
     );
     const shortCode = `#${dto.idPaciente.slice(0, 4).toUpperCase()}`;
+    const avatar = dto.avatarUrl
+      ? (dto.avatarUrl.startsWith('http') ? dto.avatarUrl : `http://localhost:8080${dto.avatarUrl}`)
+      : undefined;
 
     this.patientRecordState.update((prev) => ({
       ...prev,
@@ -707,6 +787,7 @@ export class ClinicalStoreService {
       ageYears,
       phone: dto.telefone,
       email: dto.email,
+      avatarUrl: avatar ?? prev.avatarUrl,
       activeInPsychotherapy: dto.ativo,
       emergencyProtocol: {
         ...prev.emergencyProtocol,

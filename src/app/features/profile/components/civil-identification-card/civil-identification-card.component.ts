@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ProfileFormControls } from '../../containers/profile-page.component';
 
@@ -16,18 +16,34 @@ import { ProfileFormControls } from '../../containers/profile-page.component';
         class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md pb-space-sm border-b-0"
       >
         <div class="flex items-center gap-space-md">
-          <div class="relative">
+          <div
+            class="relative group cursor-pointer"
+            (click)="fileInput.click()"
+            title="Clique para alterar a foto do perfil"
+          >
             <img
-              class="h-20 w-20 rounded-full object-cover shadow-sm"
+              class="h-20 w-20 rounded-full object-cover shadow-sm ring-2 ring-primary/20 group-hover:ring-primary transition-all"
               alt="Foto Oficial da Psicóloga"
               [src]="avatarUrl()"
             />
+            <div
+              class="absolute inset-0 rounded-full bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <span class="material-symbols-outlined text-white text-[22px]">photo_camera</span>
+            </div>
             <span
               class="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-on-secondary shadow-sm"
               title="Profissional Autenticada"
             >
               <span class="material-symbols-outlined text-[14px]">verified</span>
             </span>
+            <input
+              #fileInput
+              type="file"
+              accept="image/*"
+              class="hidden"
+              (change)="onFileSelected($event)"
+            />
           </div>
           <div>
             <span
@@ -146,6 +162,15 @@ export class CivilIdentificationCardComponent {
   public readonly formGroup = input.required<FormGroup<ProfileFormControls>>();
   public readonly avatarUrl = input.required<string>();
   public readonly cpfValidatedLabel = input.required<string>();
+  public readonly avatarFileSelected = output<File>();
+
+  public onFileSelected(event: Event): void {
+    const inputEl = event.target as HTMLInputElement;
+    if (inputEl.files && inputEl.files[0]) {
+      this.avatarFileSelected.emit(inputEl.files[0]);
+      inputEl.value = '';
+    }
+  }
 
   public isInvalid(field: keyof ProfileFormControls): boolean {
     const control = this.formGroup().controls[field];

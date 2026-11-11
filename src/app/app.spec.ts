@@ -137,4 +137,42 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
     expect(store.patientRecord().id).toBe('33333333-3333-3333-3333-333333333333');
     expect(store.patientRecord().fullName).toBe('Lucas Gabriel Albuquerque Rocha');
   });
+
+  it('deve realizar upload de avatar do psicólogo e atualizar o estado do perfil', () => {
+    authService
+      .login({ login: 'usuario@psicosafe.com.br', senha: 'MinhaSenhaSegura' })
+      .subscribe();
+    const loginReq = httpMock.expectOne('http://localhost:8080/api/v1/auth/login');
+    loginReq.flush({
+      token: 'jwt-token-mock',
+      tipo: 'Bearer',
+      idUsuario: '11111111-1111-1111-1111-111111111111',
+      login: 'usuario@psicosafe.com.br',
+      perfil: 'PSICOLOGO',
+      idPsicologoVinculado: '22222222-2222-2222-2222-222222222222',
+    });
+
+    const fakeFile = new File(['teste'], 'perfil.png', { type: 'image/png' });
+    let completed = false;
+
+    store.uploadPsychologistAvatar(fakeFile).subscribe((res) => {
+      expect(res.url).toBe('/api/v1/uploads/psicologos/perfil.png');
+      completed = true;
+    });
+
+    const req = httpMock.expectOne(
+      'http://localhost:8080/api/v1/uploads/psicologo/22222222-2222-2222-2222-222222222222'
+    );
+    expect(req.request.method).toBe('POST');
+    req.flush({
+      url: '/api/v1/uploads/psicologos/perfil.png',
+      nomeArquivo: 'perfil.png',
+      tamanho: 4,
+      tipo: 'psicologo',
+      mensagem: 'Upload realizado com sucesso',
+    });
+
+    expect(completed).toBe(true);
+    expect(store.profile().avatarUrl).toContain('/api/v1/uploads/psicologos/perfil.png');
+  });
 });

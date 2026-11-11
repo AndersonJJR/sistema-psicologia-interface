@@ -46,6 +46,7 @@ export interface PsicologoApiDto {
   readonly email: string;
   readonly telefone: string;
   readonly abordagemClinica: ClinicalApproachKey;
+  readonly avatarUrl?: string | null;
   readonly ativo: boolean;
   readonly deletedAt: string | null;
 }

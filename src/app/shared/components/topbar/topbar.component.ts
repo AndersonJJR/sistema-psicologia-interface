@@ -49,9 +49,13 @@ import { RouterLink } from '@angular/router';
             </span>
           </div>
           <div
-            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"
+            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm overflow-hidden"
           >
-            <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
+            @if (avatarUrl()) {
+              <img [src]="avatarUrl()" alt="Avatar do Profissional" class="w-full h-full object-cover" />
+            } @else {
+              <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
+            }
           </div>
         </a>
       </div>
@@ -173,6 +177,7 @@ export class TopbarComponent {
   public readonly dateLabel = input.required<string>();
   public readonly professionalName = input.required<string>();
   public readonly professionalCrp = input.required<string>();
+  public readonly avatarUrl = input<string>('');
 
   public readonly weekDaysLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   public readonly isCalendarOpen = signal<boolean>(false);

@@ -265,7 +265,7 @@ export class PatientRegistrationPageComponent implements OnInit {
       if (!patientId || this.store.isCreatingNewPatient()) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          this.store.setPatientAvatarPreview(e.target?.result as string);
+          this.store.setPatientAvatarPreview(e.target?.result as string, file);
           this.layout.showToast('Foto Carregada', 'Pré-visualização da foto definida para o novo paciente.');
         };
         reader.readAsDataURL(file);

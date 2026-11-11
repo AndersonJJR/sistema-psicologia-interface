@@ -205,4 +205,42 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
     expect(store.currentMonthOffset()).toBe(0);
     expect(store.agendaSelectedDate().toDateString()).toBe(new Date().toDateString());
   });
+
+  it('deve isolar a foto do paciente e restaurar avatar padrao ao criar novo paciente ou selecionar paciente sem foto', () => {
+    // 1. Simula paciente com avatar customizado
+    store.setPatientAvatarPreview('http://localhost:8080/api/v1/uploads/pacientes/foto-lucas.png');
+    expect(store.patientRecord().avatarUrl).toBe(
+      'http://localhost:8080/api/v1/uploads/pacientes/foto-lucas.png'
+    );
+
+    // 2. Ao criar novo paciente, o avatar DEVE ser resetado para o padrão
+    store.startNewPatientRegistration();
+    expect(store.isCreatingNewPatient()).toBe(true);
+    expect(store.patientRecord().avatarUrl).toBe(ClinicalStoreService.DEFAULT_PATIENT_AVATAR);
+    expect(store.patientRecord().avatarUrl).not.toContain('foto-lucas.png');
+
+    // 3. Ao carregar/selecionar outro paciente sem foto (avatarUrl vazio/nulo), deve usar a foto padrão
+    store.loadPatientsFromBackend();
+    const req = httpMock.expectOne('http://localhost:8080/api/v1/pacientes?incluirInativos=true');
+    req.flush([
+      {
+        idPaciente: '44444444-4444-4444-4444-444444444444',
+        nome: 'Mariana Torres Nogueira',
+        cpf: '119.450.882-45',
+        dataNascimento: '1995-08-22',
+        email: 'mariana.nogueira@email.com',
+        telefone: '(11) 98234-5678',
+        contatoEmergenciaNome: 'Roberto Nogueira (Pai)',
+        contatoEmergenciaTelefone: '(11) 99111-2233',
+        enderecoLocalSessao: 'Av. Paulista, 1578, São Paulo - SP',
+        avatarUrl: null,
+        ativo: true,
+        deletedAt: null,
+      },
+    ]);
+
+    expect(store.patientRecord().id).toBe('44444444-4444-4444-4444-444444444444');
+    expect(store.patientRecord().avatarUrl).toBe(ClinicalStoreService.DEFAULT_PATIENT_AVATAR);
+    expect(store.patientRecord().avatarUrl).not.toContain('foto-lucas.png');
+  });
 });

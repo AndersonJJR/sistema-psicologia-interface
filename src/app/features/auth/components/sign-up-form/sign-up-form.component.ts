@@ -257,7 +257,7 @@ interface SignUpFormControls {
           [disabled]="submitting()"
           class="w-full h-11 bg-[#005c55] hover:bg-[#00504a] text-white text-xs font-semibold tracking-wider rounded-lg shadow-sm transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
         >
-          <span>{{ submitting() ? 'CREDENCIANDO...' : 'CADASTRAR E VALIDAR E-PSI' }}</span>
+          <span>{{ submitting() ? 'CREDENCIANDO...' : 'CADASTRAR' }}</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"

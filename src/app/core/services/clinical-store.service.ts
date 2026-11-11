@@ -138,6 +138,9 @@ export class ClinicalStoreService {
     });
   }
 
+  public static readonly DEFAULT_PATIENT_AVATAR =
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCC2mICCYQQZF1GMGfEToWbxBEQihaaHYreVhabbv00TUBTMWUxDyDpZlPhZAHVXvH98jVGtJp7cvmE0A_iXDQkJDaT4bSRyKXE2mQMXzPI5aVPJ_G-zmBkj8Ng8RLKn4xcXl9WOWDHEaTzxAvyNqQvUA_XUc_STAe-dynlf26PF2nm1KY3dvfGEJAhnAnF538JVA4W69U-HRW0vdjuvQXb7Qb5ZWfMVrMSZkMVVRVw';
+
   public readonly logoUrl =
     'https://lh3.googleusercontent.com/aida-public/AB6AXuAZyGG8_keFvdbYHxmLHVJlOY7iSyhwaHESWh1SvZnwKBiM0Sde8ypk75wN7vDApF-oZ2jVh6t03LiJTx5xfyp9suSjf1IQ4UYmrfqFA4xg9KazkipPgPEVAg-4j_LZIzLLqNCPhpfo19RO490GcAVbod3LN_JGvD3vcCuWIrKbWDllTtAhGIrU4ReoxVR1a6yhtidj7LVIuVDYPN3lVJG1EdV6UlExQ8Mw2jDEB6DN';
 
@@ -194,8 +197,7 @@ export class ClinicalStoreService {
     ageYears: 0,
     phone: '',
     email: '',
-    avatarUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCC2mICCYQQZF1GMGfEToWbxBEQihaaHYreVhabbv00TUBTMWUxDyDpZlPhZAHVXvH98jVGtJp7cvmE0A_iXDQkJDaT4bSRyKXE2mQMXzPI5aVPJ_G-zmBkj8Ng8RLKn4xcXl9WOWDHEaTzxAvyNqQvUA_XUc_STAe-dynlf26PF2nm1KY3dvfGEJAhnAnF538JVA4W69U-HRW0vdjuvQXb7Qb5ZWfMVrMSZkMVVRVw',
+    avatarUrl: ClinicalStoreService.DEFAULT_PATIENT_AVATAR,
     activeInPsychotherapy: false,
     startFollowUpDate: '',
     totalHistoricalSessions: 0,
@@ -239,6 +241,7 @@ export class ClinicalStoreService {
   public readonly patientRecord = this.patientRecordState.asReadonly();
   public readonly patientsList = signal<readonly PacienteApiDto[]>([]);
   public readonly isCreatingNewPatient = signal<boolean>(false);
+  public readonly pendingPatientAvatarFile = signal<File | null>(null);
 
   // 3. Agenda Clínica State (esperado da API)
   private currentWeekOffset = 0;
@@ -725,7 +728,10 @@ export class ClinicalStoreService {
       );
   }
 
-  public setPatientAvatarPreview(url: string): void {
+  public setPatientAvatarPreview(url: string, file?: File): void {
+    if (file) {
+      this.pendingPatientAvatarFile.set(file);
+    }
     this.patientRecordState.update((prev) => ({
       ...prev,
       avatarUrl: url,
@@ -800,6 +806,7 @@ export class ClinicalStoreService {
 
   public selectPatientById(idPaciente: string): void {
     this.isCreatingNewPatient.set(false);
+    this.pendingPatientAvatarFile.set(null);
     const found = this.patientsList().find((p) => p.idPaciente === idPaciente);
     if (found) {
       this.applyPacienteDto(found);
@@ -817,6 +824,7 @@ export class ClinicalStoreService {
 
   public startNewPatientRegistration(): void {
     this.isCreatingNewPatient.set(true);
+    this.pendingPatientAvatarFile.set(null);
     this.patientRecordState.update((prev) => ({
       ...prev,
       id: '',
@@ -830,6 +838,7 @@ export class ClinicalStoreService {
       ageYears: 0,
       phone: '',
       email: '',
+      avatarUrl: ClinicalStoreService.DEFAULT_PATIENT_AVATAR,
       activeInPsychotherapy: true,
       emergencyProtocol: {
         ...prev.emergencyProtocol,
@@ -873,7 +882,7 @@ export class ClinicalStoreService {
       : this.http.put<PacienteApiDto>(`${this.apiBaseUrl}/pacientes/${currentId}`, payload);
 
     return request$.pipe(
-      tap((dto) => {
+      switchMap((dto) => {
         this.isCreatingNewPatient.set(false);
         this.applyPacienteDto(dto);
         this.patientsList.update((list) => {
@@ -883,8 +892,17 @@ export class ClinicalStoreService {
           }
           return [dto, ...list];
         });
-      }),
-      map(() => this.patientRecordState())
+
+        const pendingFile = this.pendingPatientAvatarFile();
+        if (pendingFile) {
+          this.pendingPatientAvatarFile.set(null);
+          return this.uploadPatientAvatar(dto.idPaciente, pendingFile).pipe(
+            map(() => this.patientRecordState()),
+            catchError(() => of(this.patientRecordState()))
+          );
+        }
+        return of(this.patientRecordState());
+      })
     );
   }
 
@@ -927,9 +945,12 @@ export class ClinicalStoreService {
       dto.dataNascimento
     );
     const shortCode = `#${dto.idPaciente.slice(0, 4).toUpperCase()}`;
-    const avatar = dto.avatarUrl
-      ? (dto.avatarUrl.startsWith('http') ? dto.avatarUrl : `http://localhost:8080${dto.avatarUrl}`)
-      : undefined;
+    const avatar =
+      dto.avatarUrl && dto.avatarUrl.trim().length > 0
+        ? dto.avatarUrl.startsWith('http')
+          ? dto.avatarUrl
+          : `http://localhost:8080${dto.avatarUrl}`
+        : ClinicalStoreService.DEFAULT_PATIENT_AVATAR;
 
     this.patientRecordState.update((prev) => ({
       ...prev,
@@ -944,7 +965,7 @@ export class ClinicalStoreService {
       ageYears,
       phone: dto.telefone,
       email: dto.email,
-      avatarUrl: avatar ?? prev.avatarUrl,
+      avatarUrl: avatar,
       activeInPsychotherapy: dto.ativo,
       emergencyProtocol: {
         ...prev.emergencyProtocol,

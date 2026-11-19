@@ -82,16 +82,6 @@ import { ClinicalStoreService } from '../../../../core/services/clinical-store.s
             </div>
           </div>
 
-          <div class="p-space-sm rounded-lg bg-surface-container flex items-center justify-between gap-space-sm">
-            <div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
-              <span class="material-symbols-outlined text-secondary text-[18px]">verified_user</span>
-              <span>Sala com criptografia ponta a ponta (P2P WebRTC / AES-256)</span>
-            </div>
-            <span class="text-on-surface-variant font-label-sm text-label-sm font-semibold shrink-0">
-              Sala #PS-{{ featured.idAgendamento.slice(0, 4).toUpperCase() }}
-            </span>
-          </div>
-
           <div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
             <button
               type="button"

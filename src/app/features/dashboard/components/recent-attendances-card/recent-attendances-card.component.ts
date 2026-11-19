@@ -118,26 +118,6 @@ import { AtendimentoRecenteDto } from '../../../../core/models';
           </a>
         </div>
       </div>
-
-      <!-- Card Complementar: Supervisão Clínica & Estudos -->
-      <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-center gap-space-md">
-        <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3NiNac_cvHzl4C9zPgxVm6F3VeBSmqu-O0mjQ5YsQPHEsWNL-vWh0LnRgaux9iHLHzWAK4bMTyFYxsAqgDsaKVknA3lA_96J27rhzuTN9RBAdNSH3idTkTCd6T3y5dgrhjYvkOCahWadUfF3TE45yyUF4fDX1zko3sLZLEdFVuaW5aiG6Hg6JVk4OY5SL3X69hVm9DdUjvwDr4CFKLHLp9-PA7SXvlgQiBAj0HUAt"
-          alt="Consultório de supervisão clínica"
-          class="w-20 h-20 rounded-xl object-cover shadow-sm shrink-0"
-        />
-        <div class="flex flex-col">
-          <span class="font-label-sm text-label-sm text-secondary font-semibold uppercase tracking-wider">
-            Supervisão Clínica &amp; Estudos
-          </span>
-          <span class="font-label-lg text-label-lg text-on-surface font-bold mt-0.5">
-            Próxima Reunião Clínica
-          </span>
-          <p class="font-body-sm text-body-sm text-on-surface-variant">
-            Grupo de Intervisão Clínica: Sexta-feira às 18:30 (Sala Virtual 3).
-          </p>
-        </div>
-      </div>
     </div>
   `,
 })

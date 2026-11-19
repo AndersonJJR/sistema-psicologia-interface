@@ -6,7 +6,7 @@ import { DashboardResumoApiDto } from '../../../../core/models';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
       <!-- Card 1: Repasse Líquido (Carnê-Leão) -->
       <div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
         <div class="flex items-start justify-between">
@@ -123,35 +123,6 @@ import { DashboardResumoApiDto } from '../../../../core/models';
           <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
             <span>{{ summary().pacientesAtivos }} Pacientes ativos</span>
             <span class="font-medium text-on-surface">{{ assiduidadeLabel() }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 4: Pendências Regulatórias -->
-      <div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
-        <div class="flex items-start justify-between">
-          <div class="flex flex-col">
-            <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
-              Pendências Regulatórias
-            </span>
-            <div class="flex items-baseline gap-2 mt-1">
-              <span class="font-display text-display text-error font-bold">
-                {{ summary().prontuariosEmRascunho }}
-              </span>
-              <span class="font-label-md text-label-md text-on-surface-variant">em rascunho</span>
-            </div>
-          </div>
-          <div class="w-10 h-10 rounded-xl bg-error-container text-on-error-container flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-[22px]">draw</span>
-          </div>
-        </div>
-        <div class="mt-space-sm pt-space-xs flex flex-col gap-1.5">
-          <span class="font-body-sm text-body-sm text-on-surface-variant">
-            Prontuários aguardando assinatura ICP-Brasil
-          </span>
-          <div class="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm">
-            <span class="material-symbols-outlined text-[15px] text-tertiary">info</span>
-            <span>Prazo CFP: registro em até 48h</span>
           </div>
         </div>
       </div>

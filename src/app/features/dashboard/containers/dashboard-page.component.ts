@@ -28,16 +28,6 @@ import { TodayAppointmentsCardComponent } from '../components/today-appointments
       <!-- 1. Cabeçalho de Boas-Vindas & Ações Rápidas -->
       <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-space-md">
         <div class="flex flex-col gap-space-xs">
-          <div class="flex flex-wrap items-center gap-space-sm mb-1">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-sm text-label-sm">
-              <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">verified</span>
-              {{ store.profile().crpRegistration ? 'CRP ' + store.profile().crpRegistration + ' Ativo' : 'Registro Profissional Ativo' }}
-            </span>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">
-              <span class="material-symbols-outlined text-[15px]">shield</span>
-              Ambiente CFP &amp; LGPD Conforme
-            </span>
-          </div>
           <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">
             {{ greetingPrefix() }}, {{ store.profile().shortDisplayName || 'Psicólogo(a)' }}
           </h1>
@@ -63,7 +53,7 @@ import { TodayAppointmentsCardComponent } from '../components/today-appointments
             class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg transition-colors shadow-md cursor-pointer"
           >
             <span class="material-symbols-outlined text-[20px]">add_circle</span>
-            <span>+ Novo Agendamento</span>
+            <span>Novo Agendamento</span>
           </button>
         </div>
       </header>
@@ -88,33 +78,6 @@ import { TodayAppointmentsCardComponent } from '../components/today-appointments
           />
         </div>
       </section>
-
-      <!-- 4. Barra Inferior de Avisos & Lembretes Importantes -->
-      <aside class="w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
-        <div class="flex items-start md:items-center gap-space-sm">
-          <div class="w-10 h-10 rounded-xl bg-surface-container-high text-primary flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-[22px]">policy</span>
-          </div>
-          <div class="flex flex-col">
-            <span class="font-label-md text-label-md text-on-surface font-bold">
-              Lembrete Regulatório CFP &amp; Segurança de Dados
-            </span>
-            <p class="font-body-sm text-body-sm text-on-surface-variant">
-              Resolução CFP nº 01/2009 exige guarda do prontuário por no mínimo 5 anos. Seus registros clínicos estão criptografados com AES-256-GCM e auditados pela LGPD.
-            </p>
-          </div>
-        </div>
-        <div class="flex items-center gap-space-sm shrink-0 self-end md:self-center">
-          <button
-            type="button"
-            (click)="layout.openHelpModal()"
-            title="Visualizar informações de conformidade"
-            class="p-2 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
-          >
-            <span class="material-symbols-outlined text-[20px]">help_outline</span>
-          </button>
-        </div>
-      </aside>
     </div>
 
     <app-quick-appointment-modal

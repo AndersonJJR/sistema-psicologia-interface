@@ -52,10 +52,10 @@ export class LayoutService {
     },
     {
       id: 'atendimento-clinico',
-      label: 'Atendimento Clínico',
+      label: 'Atendimentos',
       icon: 'clinical_notes',
       route: '/painel-clinico',
-      matchRoutes: ['/painel-clinico', '/painel-clinico-e', '/atendimento-clinico'],
+      matchRoutes: ['/painel-clinico', '/painel-clinico-e', '/atendimentos', '/atendimento-clinico'],
     },
     {
       id: 'faturamento-split',

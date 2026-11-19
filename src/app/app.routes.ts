@@ -68,7 +68,7 @@ export const routes: Routes = [
       },
       {
         path: 'painel-clinico',
-        title: 'PsicoSafe | Painel de Atendimento Clínico & Prontuário',
+        title: 'PsicoSafe | Atendimentos e Registro Pós-Sessão',
         canActivate: [clinicalRbacGuard],
         loadComponent: () =>
           import('./features/clinical-panel/containers/clinical-panel-page.component').then(
@@ -77,7 +77,7 @@ export const routes: Routes = [
       },
       {
         path: 'painel-clinico-e',
-        title: 'PsicoSafe | Painel de Atendimento Clínico (Menu Recolhido)',
+        title: 'PsicoSafe | Atendimentos (Menu Recolhido)',
         canActivate: [clinicalRbacGuard],
         loadComponent: () =>
           import('./features/clinical-panel/containers/clinical-panel-page.component').then(

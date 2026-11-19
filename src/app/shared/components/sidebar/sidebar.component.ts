@@ -136,56 +136,98 @@ import { SidebarNavItem } from '../../../core/models';
       </div>
 
       <!-- Contextual Sidebar Footer -->
-      @if (showProfileActions()) {
-        @if (!collapsed()) {
-          <div class="p-space-md">
-            <div class="mb-space-md flex flex-col gap-2">
-              <button
-                type="button"
-                id="btn-save-profile"
-                [disabled]="savingProfile()"
-                (click)="saveProfile.emit()"
-                class="w-full h-11 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
-              >
-                @if (savingProfile()) {
-                  <span class="material-symbols-outlined text-[20px] animate-spin">refresh</span>
-                  <span>Gravando Dados...</span>
-                } @else {
-                  <span class="material-symbols-outlined text-[18px]">save</span>
-                  <span>Salvar Alterações</span>
-                }
-              </button>
-              <p class="font-label-sm text-[11px] text-center text-on-surface-variant pt-0.5 leading-tight">
-                {{ lastModifiedLabel() }}
-              </p>
+      <div class="w-full flex flex-col">
+        @if (showProfileActions()) {
+          @if (!collapsed()) {
+            <div class="px-space-md pb-space-sm">
+              <div class="flex flex-col gap-2">
+                <button
+                  type="button"
+                  id="btn-save-profile"
+                  [disabled]="savingProfile()"
+                  (click)="saveProfile.emit()"
+                  class="w-full h-11 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-space-xs shadow-sm hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60"
+                >
+                  @if (savingProfile()) {
+                    <span class="material-symbols-outlined text-[20px] animate-spin">refresh</span>
+                    <span>Gravando Dados...</span>
+                  } @else {
+                    <span class="material-symbols-outlined text-[18px]">save</span>
+                    <span>Salvar Alterações</span>
+                  }
+                </button>
+                <p class="font-label-sm text-[11px] text-center text-on-surface-variant pt-0.5 leading-tight">
+                  {{ lastModifiedLabel() }}
+                </p>
+              </div>
             </div>
+          } @else {
+            <div class="p-2 pb-space-sm">
+              <div class="flex flex-col gap-2 items-center">
+                <button
+                  type="button"
+                  id="btn-save-profile"
+                  title="Salvar Alterações"
+                  [disabled]="savingProfile()"
+                  (click)="saveProfile.emit()"
+                  class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer"
+                >
+                  <span
+                    class="material-symbols-outlined text-[20px]"
+                    [class.animate-spin]="savingProfile()"
+                  >
+                    {{ savingProfile() ? 'refresh' : 'save' }}
+                  </span>
+                </button>
+                <div
+                  class="w-2 h-2 rounded-full bg-secondary"
+                  [title]="lastModifiedLabel()"
+                ></div>
+              </div>
+            </div>
+          }
+        }
+
+        <!-- Ajuda & Suporte -->
+        @if (!collapsed()) {
+          <div class="px-space-md pb-space-md pt-space-xs">
+            <button
+              type="button"
+              id="btn-sidebar-help"
+              (click)="openHelp.emit()"
+              class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all w-full text-left cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[20px]">help_center</span>
+              <span class="font-label-lg text-label-lg">Ajuda &amp; Suporte</span>
+            </button>
+          </div>
+        } @else if (compact16()) {
+          <div class="w-full px-1.5 pb-space-sm flex justify-center">
+            <button
+              type="button"
+              id="btn-sidebar-help"
+              title="Ajuda & Suporte"
+              (click)="openHelp.emit()"
+              class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[20px]">help_center</span>
+            </button>
           </div>
         } @else {
-          <div class="p-2 pb-space-md">
-            <div class="flex flex-col gap-2 items-center">
-              <button
-                type="button"
-                id="btn-save-profile"
-                title="Salvar Alterações"
-                [disabled]="savingProfile()"
-                (click)="saveProfile.emit()"
-                class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer"
-              >
-                <span
-                  class="material-symbols-outlined text-[20px]"
-                  [class.animate-spin]="savingProfile()"
-                >
-                  {{ savingProfile() ? 'refresh' : 'save' }}
-                </span>
-              </button>
-              <div
-                class="w-2 h-2 rounded-full bg-secondary"
-                [title]="lastModifiedLabel()"
-              ></div>
-            </div>
+          <div class="px-2 pb-space-md flex flex-col items-center">
+            <button
+              type="button"
+              id="btn-sidebar-help"
+              title="Ajuda & Suporte"
+              (click)="openHelp.emit()"
+              class="flex flex-col items-center justify-center p-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all cursor-pointer w-full"
+            >
+              <span class="material-symbols-outlined text-[22px]">help_center</span>
+              <span class="font-label-sm text-[10px] mt-0.5">Ajuda</span>
+            </button>
           </div>
         }
-      }
+      </div>
     </aside>
   `,
 })
@@ -201,6 +243,7 @@ export class SidebarComponent {
 
   public readonly toggleSidebar = output<void>();
   public readonly saveProfile = output<void>();
+  public readonly openHelp = output<void>();
 
   public readonly asideClasses = computed<string>(() => {
     const base =

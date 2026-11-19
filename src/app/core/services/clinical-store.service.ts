@@ -15,6 +15,7 @@ import {
   ClinicalApproachKey,
   ClinicalApproachOption,
   ClinicalSessionData,
+  CompletedSessionRecordItem,
   DashboardResumoApiDto,
   FormalProntuarioRecord,
   LogAuditoriaApiDto,
@@ -446,6 +447,7 @@ export class ClinicalStoreService {
   });
   public readonly agendamentosList = signal<readonly AgendamentoApiDto[]>([]);
   public readonly selectedAgendamentoId = signal<string | null>(null);
+  public readonly completedSessionsList = signal<readonly CompletedSessionRecordItem[]>([]);
 
   // 4. Painel Clínico (Atendimento Clínico & Prontuário) State (esperado da API)
   private readonly clinicalSessionState = signal<ClinicalSessionData>({
@@ -1269,6 +1271,75 @@ export class ClinicalStoreService {
     ]);
   }
 
+  public loadCompletedSessionsForDocumentation(preferredAgendamentoId?: string): void {
+    const agendamentos$ = this.http
+      .get<AgendamentoApiDto[]>(`${this.apiBaseUrl}/agendamentos`)
+      .pipe(catchError(() => of([] as AgendamentoApiDto[])));
+
+    const prontuarios$ = this.http
+      .get<ProntuarioClinicoApiDto[]>(`${this.apiBaseUrl}/prontuarios`)
+      .pipe(catchError(() => of([] as ProntuarioClinicoApiDto[])));
+
+    const registros$ = this.authService.canAccessRegistrosDocumentais()
+      ? this.http
+          .get<RegistroDocumentalApiDto[]>(`${this.apiBaseUrl}/registros-documentais`)
+          .pipe(catchError(() => of([] as RegistroDocumentalApiDto[])))
+      : of([] as RegistroDocumentalApiDto[]);
+
+    forkJoin({
+      agendamentos: agendamentos$,
+      prontuarios: prontuarios$,
+      registros: registros$,
+    }).subscribe(({ agendamentos, prontuarios, registros }) => {
+      if (agendamentos.length > 0) {
+        this.agendamentosList.set(agendamentos);
+        this.syncScheduleSlotsFromBackend(agendamentos);
+      }
+
+      const prontuarioMap = new Map<string, ProntuarioClinicoApiDto>();
+      for (const pr of prontuarios) {
+        prontuarioMap.set(pr.idAgendamento, pr);
+      }
+
+      const registroSet = new Set<string>(registros.map((r) => r.idAgendamento));
+      const targetId = preferredAgendamentoId ?? this.selectedAgendamentoId();
+
+      const completedItems: CompletedSessionRecordItem[] = agendamentos
+        .filter((a) => a.status === 'REALIZADO' || (targetId && a.idAgendamento === targetId))
+        .map((a) => {
+          const pr = prontuarioMap.get(a.idAgendamento);
+          const hasSignedProntuario = Boolean(pr?.assinado);
+          const hasDraftProntuario = Boolean(pr && !pr.assinado);
+          const hasPrivateRecord = registroSet.has(a.idAgendamento);
+          const isPending = !hasSignedProntuario || !hasPrivateRecord;
+          return {
+            agendamentoId: a.idAgendamento,
+            patientId: a.idPaciente,
+            patientName: a.nomePaciente,
+            dataHoraSessao: a.dataHoraSessao,
+            modalidade: a.modalidade,
+            hasSignedProntuario,
+            hasDraftProntuario,
+            hasPrivateRecord,
+            isPending,
+          };
+        });
+
+      this.completedSessionsList.set(completedItems);
+
+      const defaultSelected =
+        (targetId
+          ? completedItems.find((item) => item.agendamentoId === targetId)
+          : undefined) ??
+        completedItems.find((item) => item.isPending) ??
+        completedItems[0];
+
+      if (defaultSelected) {
+        this.loadClinicalSessionFromBackend(defaultSelected.agendamentoId);
+      }
+    });
+  }
+
   public loadClinicalSessionFromBackend(idAgendamentoParam?: string): void {
     const resolveAgendamento$ = (() => {
       const targetId =
@@ -1332,19 +1403,25 @@ export class ClinicalStoreService {
               ? 'Sessão assinada e selada digitalmente (Imutável)'
               : prontuario
                 ? `Sincronizado com servidor CFP (${new Date(prontuario.dataRegistro).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})`
-                : prev.lastDraftSavedAt,
+                : 'Aguardando registro pós-sessão',
             formalRecord: prontuario
               ? {
                   technicalProcedures: prontuario.procedimentosTecnicos,
                   observableEvolution: prontuario.evolucaoObservavel,
                 }
-              : prev.formalRecord,
+              : {
+                  technicalProcedures: '',
+                  observableEvolution: '',
+                },
             privateRecord: registro
               ? {
                   provisionalHypotheses: registro.hipotesesProvisorias,
                   supervisionAndCountertransference: registro.notasSupervisao,
                 }
-              : prev.privateRecord,
+              : {
+                  provisionalHypotheses: '',
+                  supervisionAndCountertransference: '',
+                },
             signatureMetadata: {
               responsibleProfessional: agendamento.nomePsicologo || prev.signatureMetadata.responsibleProfessional,
               activeRegistration: `CRP ${this.profileState().crpRegistration}`,
@@ -1396,7 +1473,7 @@ export class ClinicalStoreService {
         : of(null);
 
     return forkJoin({ prontuario: saveProntuario$, registro: saveRegistro$ }).pipe(
-      map(({ prontuario }) => {
+      map(({ prontuario, registro }) => {
         const timeStr = new Date(prontuario.dataRegistro).toLocaleTimeString('pt-BR', {
           hour: '2-digit',
           minute: '2-digit',
@@ -1408,6 +1485,19 @@ export class ClinicalStoreService {
           privateRecord: priv,
           lastDraftSavedAt: label,
         }));
+        this.completedSessionsList.update((list) =>
+          list.map((item) =>
+            item.agendamentoId === idAgendamento
+              ? {
+                  ...item,
+                  hasDraftProntuario: !prontuario.assinado,
+                  hasSignedProntuario: prontuario.assinado,
+                  hasPrivateRecord: item.hasPrivateRecord || Boolean(registro),
+                  isPending: !prontuario.assinado || !(item.hasPrivateRecord || Boolean(registro)),
+                }
+              : item
+          )
+        );
         return label;
       })
     );
@@ -1444,6 +1534,18 @@ export class ClinicalStoreService {
               signedDto.hashAssinatura ?? prev.signatureMetadata.cryptographicHash,
           },
         }));
+        this.completedSessionsList.update((list) =>
+          list.map((item) =>
+            item.agendamentoId === idAgendamento
+              ? {
+                  ...item,
+                  hasSignedProntuario: true,
+                  hasDraftProntuario: false,
+                  isPending: !item.hasPrivateRecord,
+                }
+              : item
+          )
+        );
         return this.clinicalSessionState();
       })
     );

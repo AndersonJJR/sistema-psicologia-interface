@@ -1,9 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   OnInit,
-  computed,
   effect,
   inject,
   signal,
@@ -13,6 +11,7 @@ import { ClinicalTabType } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { ClinicalStoreService } from '../../../core/services/clinical-store.service';
 import { LayoutService } from '../../../core/services/layout.service';
+import { CompletedSessionsListComponent } from '../components/completed-sessions-list/completed-sessions-list.component';
 import { FormalRecordTabComponent } from '../components/formal-record-tab/formal-record-tab.component';
 import { PrivateRecordTabComponent } from '../components/private-record-tab/private-record-tab.component';
 import { SessionHeaderComponent } from '../components/session-header/session-header.component';
@@ -33,6 +32,7 @@ export interface PrivateRecordFormControls {
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    CompletedSessionsListComponent,
     SessionHeaderComponent,
     FormalRecordTabComponent,
     PrivateRecordTabComponent,
@@ -41,19 +41,21 @@ export interface PrivateRecordFormControls {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col w-full gap-space-lg pb-space-xl">
-      <!-- CABEÇALHO DA SESSÃO: PERSISTENTE COM PROTOCOLO DE CRISE -->
+      <!-- LISTA DE ATENDIMENTOS JÁ REALIZADOS COM PENDÊNCIA DE REGISTRO -->
+      <app-completed-sessions-list
+        [sessions]="store.completedSessionsList()"
+        [selectedAgendamentoId]="store.selectedAgendamentoId()"
+        (selectSession)="onSelectCompletedSession($event)"
+      />
+
+      <!-- CABEÇALHO DA SESSÃO VINCULADA -->
       <app-session-header
         [patientName]="store.clinicalSession().patientName"
         [patientInitials]="store.clinicalSession().patientInitials"
         [patientAgeLabel]="store.clinicalSession().patientAgeLabel"
         [sessionDateLabel]="store.clinicalSession().sessionDateLabel"
         [sessionNumberLabel]="store.clinicalSession().sessionNumberLabel"
-        [elapsedFormatted]="elapsedFormatted()"
-        [crisisInfo]="store.clinicalSession().crisisInfo"
-        [crisisCardOpen]="isCrisisCardOpen()"
-        (toggleCrisisCard)="toggleCrisisCard()"
-        (closeCrisisCard)="closeCrisisCard()"
-        (dispatchEmergencyAlert)="onDispatchEmergencyAlert()"
+        [isSigned]="store.clinicalSession().isSignedAndImmutable"
       />
 
       <!-- SEGREGAÇÃO REGULATÓRIA MANDATÓRIA CFP: DUAS GUIAS -->
@@ -187,21 +189,9 @@ export class ClinicalPanelPageComponent implements OnInit {
   public readonly store = inject(ClinicalStoreService);
   private readonly authService = inject(AuthService);
   private readonly layout = inject(LayoutService);
-  private readonly destroyRef = inject(DestroyRef);
 
   public readonly activeTab = signal<ClinicalTabType>('prontuario');
-  public readonly isCrisisCardOpen = signal<boolean>(false);
   public readonly isSignatureModalOpen = signal<boolean>(false);
-  public readonly elapsedSeconds = signal<number>(
-    this.store.clinicalSession().initialElapsedSeconds
-  );
-
-  public readonly elapsedFormatted = computed<string>(() => {
-    const total = this.elapsedSeconds();
-    const mins = Math.floor(total / 60);
-    const secs = total % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  });
 
   private readonly initialFormal = this.store.clinicalSession().formalRecord;
   private readonly initialPrivate = this.store.clinicalSession().privateRecord;
@@ -249,15 +239,11 @@ export class ClinicalPanelPageComponent implements OnInit {
   }
 
   public ngOnInit(): void {
-    this.store.loadClinicalSessionFromBackend();
-    if (typeof window !== 'undefined') {
-      const timerId = window.setInterval(() => {
-        if (!this.store.clinicalSession().isSignedAndImmutable) {
-          this.elapsedSeconds.update((v) => v + 1);
-        }
-      }, 1000);
-      this.destroyRef.onDestroy(() => window.clearInterval(timerId));
-    }
+    this.store.loadCompletedSessionsForDocumentation();
+  }
+
+  public onSelectCompletedSession(idAgendamento: string): void {
+    this.store.loadClinicalSessionFromBackend(idAgendamento);
   }
 
   public selectTab(tab: ClinicalTabType): void {
@@ -274,35 +260,6 @@ export class ClinicalPanelPageComponent implements OnInit {
       return;
     }
     this.activeTab.set(tab);
-  }
-
-  public toggleCrisisCard(): void {
-    this.isCrisisCardOpen.update((open) => !open);
-  }
-
-  public closeCrisisCard(): void {
-    this.isCrisisCardOpen.set(false);
-  }
-
-  public onDispatchEmergencyAlert(): void {
-    this.isCrisisCardOpen.set(false);
-    this.store.dispatchEmergencyAlertOnBackend().subscribe({
-      next: () => {
-        const contactName = this.store.clinicalSession().crisisInfo.contactName;
-        this.layout.showToast(
-          'Protocolo de Risco Acionado (Res. CFP 11/2018)',
-          `Notificação urgente enviada para ${contactName} e registro de auditoria gravado.`,
-          'emergency'
-        );
-      },
-      error: (err: unknown) => {
-        this.layout.showToast(
-          'Erro no Protocolo de Emergência',
-          AuthService.extractErrorMessage(err, 'Falha ao registrar acionamento de emergência.'),
-          'error'
-        );
-      },
-    });
   }
 
   public onFormatText(event: {
@@ -376,7 +333,7 @@ export class ClinicalPanelPageComponent implements OnInit {
           this.isSignatureModalOpen.set(false);
           this.layout.showToast(
             'Sessão Assinada e Selada Digitalmente',
-            'Prontuário assinado com certificado ICP-Brasil / e-Psi (Registro Imutável).'
+            'Prontuário assinado com certificado ICP-Brasil (Registro Imutável).'
           );
         },
         error: (err: unknown) => {

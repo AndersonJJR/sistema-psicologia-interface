@@ -371,4 +371,68 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
 
     expect(createdId).toBe('66666666-6666-6666-6666-666666666666');
   });
+
+  it('deve listar atendimentos realizados com pendencia de prontuario e registro documental', () => {
+    const authService = TestBed.inject(AuthService);
+    const store = TestBed.inject(ClinicalStoreService);
+
+    authService.login({ login: 'dra.juliana@psicosafe.com.br', senha: 'MinhaSenhaSegura' }).subscribe();
+    httpMock.expectOne('/api/v1/auth/login').flush({
+      token: 'jwt-token-mock',
+      tipo: 'Bearer',
+      login: 'dra.juliana@psicosafe.com.br',
+      perfil: 'PSICOLOGO',
+      idPsicologoVinculado: '22222222-2222-2222-2222-222222222222',
+      expiraEm: 3600000,
+    });
+
+    store.loadCompletedSessionsForDocumentation();
+
+    httpMock.expectOne('/api/v1/agendamentos').flush([
+      {
+        idAgendamento: '77777777-7777-7777-7777-777777777777',
+        idPsicologo: '22222222-2222-2222-2222-222222222222',
+        nomePsicologo: 'Dra. Juliana Mendes',
+        idPaciente: '55555555-5555-5555-5555-555555555555',
+        nomePaciente: 'Lucas Gabriel',
+        contatoEmergenciaNome: 'Maria',
+        contatoEmergenciaTelefone: '(11) 99999-0000',
+        dataHoraSessao: '2026-11-19T09:00:00',
+        modalidade: 'TELECONSULTA',
+        status: 'REALIZADO',
+        enderecoLocalSessao: 'Rua A, 10',
+        ativo: true,
+        deletedAt: null,
+      },
+      {
+        idAgendamento: '88888888-8888-8888-8888-888888888888',
+        idPsicologo: '22222222-2222-2222-2222-222222222222',
+        nomePsicologo: 'Dra. Juliana Mendes',
+        idPaciente: '55555555-5555-5555-5555-555555555555',
+        nomePaciente: 'Beatriz Lima',
+        contatoEmergenciaNome: 'João',
+        contatoEmergenciaTelefone: '(11) 98888-0000',
+        dataHoraSessao: '2026-11-19T14:00:00',
+        modalidade: 'PRESENCIAL',
+        status: 'AGENDADO',
+        enderecoLocalSessao: 'Sala 1',
+        ativo: true,
+        deletedAt: null,
+      },
+    ]);
+
+    httpMock.expectOne('/api/v1/prontuarios').flush([]);
+    httpMock.expectOne('/api/v1/registros-documentais').flush([]);
+
+    // Ao selecionar automaticamente o atendimento realizado pendente, carrega prontuário/registro dele
+    httpMock.expectOne('/api/v1/prontuarios/agendamento/77777777-7777-7777-7777-777777777777').flush(null);
+    httpMock.expectOne('/api/v1/registros-documentais/agendamento/77777777-7777-7777-7777-777777777777').flush(null);
+
+    const list = store.completedSessionsList();
+    expect(list.length).toBe(1);
+    expect(list[0].agendamentoId).toBe('77777777-7777-7777-7777-777777777777');
+    expect(list[0].isPending).toBe(true);
+    expect(list[0].hasSignedProntuario).toBe(false);
+    expect(list[0].hasPrivateRecord).toBe(false);
+  });
 });

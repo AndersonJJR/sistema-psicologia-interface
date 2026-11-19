@@ -82,3 +82,15 @@ export interface RegistroDocumentalRequestDto {
   readonly hipotesesProvisorias: string;
   readonly notasSupervisao: string;
 }
+
+export interface CompletedSessionRecordItem {
+  readonly agendamentoId: string;
+  readonly patientId: string;
+  readonly patientName: string;
+  readonly dataHoraSessao: string;
+  readonly modalidade: 'PRESENCIAL' | 'TELECONSULTA';
+  readonly hasSignedProntuario: boolean;
+  readonly hasDraftProntuario: boolean;
+  readonly hasPrivateRecord: boolean;
+  readonly isPending: boolean;
+}

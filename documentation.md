@@ -23,6 +23,7 @@ src/
     │   │   ├── auth.model.ts
     │   │   ├── billing.model.ts
     │   │   ├── clinical-session.model.ts
+    │   │   ├── dashboard.model.ts
     │   │   ├── navigation.model.ts
     │   │   ├── patient.model.ts
     │   │   ├── privacy.model.ts
@@ -46,6 +47,9 @@ src/
     │       └── app-shell.component.ts
     └── features/               # Módulos de Negócio Isolados (Smart vs. Dumb Components)
         ├── auth/               # Autenticação e Credenciamento Clínico (e-Psi)
+        │   ├── components/
+        │   └── containers/
+        ├── dashboard/          # Página Inicial: Resumo Clínico, Financeiro e Agendamento Rápido
         │   ├── components/
         │   └── containers/
         ├── profile/            # Perfil do Psicólogo e Habilitação Profissional
@@ -88,6 +92,10 @@ Cada subpasta presente em `interfaces/` (incluindo as variações `*E` que repre
 
 | Pasta em `interfaces/` | Rota Principal / Alias | Smart Container | Dumb / UI Components Principais | Descrição Funcional |
 | :--- | :--- | :--- | :--- | :--- |
+| `interfaces/paginainicial` | `/inicio` | `DashboardPageComponent` | `DashboardKpiCardsComponent`, `TodayAppointmentsCardComponent`, `RecentAttendancesCardComponent` | Página inicial com indicadores financeiros (Repasse Carnê-Leão e sparkline), consultas de hoje, taxa de assiduidade, pendências regulatórias, atendimentos recentes, supervisão clínica e ações rápidas. |
+| `interfaces/paginainicial-menu-recolhido` | `/inicio-e` | `DashboardPageComponent` | `SidebarComponent` (modo compacto `w-20` com ícone `Início` e botão `Ajuda & Suporte`) | Visualização da página inicial com barra lateral recolhida e modal de Ajuda & Suporte acessível pelo rodapé do menu. |
+| `interfaces/paginainicial-modal-novo` | `/inicio` (Modal) | `DashboardPageComponent` | `QuickAppointmentModalComponent` | Modal "Novo Agendamento Clínico" com seleção de paciente existente, modalidade (Telessaúde/Presencial), duração prevista, recorrência semanal, cálculo de split 70%/30% e lembrete 24h. |
+| `interfaces/paginainicial-modal-modal-criar-paciente` | `/inicio` (Modal) | `DashboardPageComponent` | `QuickAppointmentModalComponent` (Modo Cadastro Rápido) | Fluxo inline de "Cadastro Rápido de Paciente" dentro do modal de agendamento com dados civis, contato de emergência CFP Res. 11/2018 e consentimento LGPD via WhatsApp. |
 | `interfaces/login_e_cadastro` | `/login` (`/login-e-cadastro`) | `AuthPageComponent` | `SignInFormComponent`, `SignUpFormComponent`, `AuthOverlayComponent` | Autenticação segura, SSO (Google/Microsoft/Certificado A1) e credenciamento clínico com validação de CRP e e-Psi em painel deslizante. |
 | `interfaces/perfilProfissional` | `/perfil-profissional` | `ProfilePageComponent` | `CivilIdentificationCardComponent`, `EpsiCredentialCardComponent`, `TelepsychologyRoomsCardComponent` | Gestão de dados civis da psicóloga, verificação e renovação de credencial e-Psi/CFP, matriz teórica e parâmetros de salas criptografadas (Menu Expandido `w-72`). |
 | `interfaces/perfilProfissonalE` | `/perfil-profissional-e` | `ProfilePageComponent` | `SidebarComponent` (modo compacto `w-20`), `CivilIdentificationCardComponent`, `EpsiCredentialCardComponent`, `TelepsychologyRoomsCardComponent` | Visualização do Perfil Profissional com barra lateral recolhida, ações rápidas compactas no rodapé do menu e selo `Ambiente Homologado CFP`. |

@@ -7,6 +7,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PacienteApiDto, QuickAppointmentFormPayload } from '../../../../core/models';
 import { ClinicalStoreService } from '../../../../core/services/clinical-store.service';
@@ -508,6 +509,7 @@ export class QuickAppointmentModalComponent {
   public readonly patientMode = signal<'existing' | 'new'>('existing');
   public readonly showPatientDropdown = signal<boolean>(false);
   public readonly validationError = signal<string>('');
+  public readonly selectedPatientId = signal<string>('');
 
   public readonly form = new FormGroup({
     patientId: new FormControl<string>('', { nonNullable: true }),
@@ -536,17 +538,24 @@ export class QuickAppointmentModalComponent {
   });
 
   public readonly selectedPatient = computed<PacienteApiDto | null>(() => {
-    const id = this.form.controls.patientId.value;
+    const id = this.selectedPatientId();
     const list = this.patients();
     if (list.length === 0) return null;
     return list.find((p) => p.idPaciente === id) ?? list[0];
   });
 
   constructor() {
+    this.form.controls.patientId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => {
+        this.selectedPatientId.set(id);
+      });
+
     effect(() => {
       const list = this.patients();
-      if (list.length > 0 && !this.form.controls.patientId.value) {
+      if (list.length > 0 && !this.selectedPatientId()) {
         this.form.controls.patientId.setValue(list[0].idPaciente);
+        this.selectedPatientId.set(list[0].idPaciente);
       }
     });
   }
@@ -566,6 +575,7 @@ export class QuickAppointmentModalComponent {
   }
 
   public onPatientDropdownChange(): void {
+    this.selectedPatientId.set(this.form.controls.patientId.value);
     this.showPatientDropdown.set(false);
   }
 

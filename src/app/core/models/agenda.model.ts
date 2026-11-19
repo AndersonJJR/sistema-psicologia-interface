@@ -77,6 +77,9 @@ export interface AgendamentoApiDto {
   readonly modalidade: ModalidadeAtendimentoApi;
   readonly status: StatusAgendamentoApi;
   readonly enderecoLocalSessao: string;
+  readonly duracaoMinutos?: number;
+  readonly tipoSessao?: string;
+  readonly enviarLembrete24h?: boolean;
   readonly ativo: boolean;
   readonly deletedAt: string | null;
 }
@@ -88,4 +91,10 @@ export interface AgendamentoRequestDto {
   readonly modalidade: ModalidadeAtendimentoApi;
   readonly status?: StatusAgendamentoApi;
   readonly enderecoLocalSessao?: string;
+  readonly duracaoMinutos?: number;
+  readonly tipoSessao?: string;
+  readonly repetirSemanalmente?: boolean;
+  readonly quantidadeSemanas?: number;
+  readonly valorHonorario?: number;
+  readonly enviarLembrete24h?: boolean;
 }

@@ -6,3 +6,4 @@ export * from './clinical-session.model';
 export * from './billing.model';
 export * from './privacy.model';
 export * from './navigation.model';
+export * from './dashboard.model';

@@ -6,7 +6,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'agenda',
+    redirectTo: 'inicio',
   },
   {
     path: 'login',
@@ -18,6 +18,22 @@ export const routes: Routes = [
     path: '',
     component: AppShellComponent,
     children: [
+      {
+        path: 'inicio',
+        title: 'PsicoSafe | Início — Resumo Clínico & Financeiro',
+        loadComponent: () =>
+          import('./features/dashboard/containers/dashboard-page.component').then(
+            (m) => m.DashboardPageComponent
+          ),
+      },
+      {
+        path: 'inicio-e',
+        title: 'PsicoSafe | Início (Menu Recolhido)',
+        loadComponent: () =>
+          import('./features/dashboard/containers/dashboard-page.component').then(
+            (m) => m.DashboardPageComponent
+          ),
+      },
       {
         path: 'agenda',
         title: 'PsicoSafe | Agenda Clínica e Sala de Espera',
@@ -122,6 +138,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'agenda',
+    redirectTo: 'inicio',
   },
 ];

@@ -336,7 +336,7 @@ export class AuthPageComponent {
             'Autenticação Clínica Confirmada',
             `Sessão JWT iniciada para ${session.login} (${session.perfil}).`
           );
-          void this.router.navigate(['/agenda']);
+          void this.router.navigate(['/inicio']);
         },
         error: (err: unknown) => {
           this.isSubmitting.set(false);

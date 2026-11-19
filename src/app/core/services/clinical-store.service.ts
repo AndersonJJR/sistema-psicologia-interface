@@ -15,6 +15,7 @@ import {
   ClinicalApproachKey,
   ClinicalApproachOption,
   ClinicalSessionData,
+  DashboardResumoApiDto,
   FormalProntuarioRecord,
   LogAuditoriaApiDto,
   ModalidadeAtendimentoApi,
@@ -36,6 +37,7 @@ import {
   PsicologoApiDto,
   PsicologoRequestDto,
   PsychologistProfile,
+  QuickAppointmentFormPayload,
   RegistroDocumentalApiDto,
   RegistroDocumentalRequestDto,
   ScheduleSlotItem,
@@ -49,7 +51,7 @@ import { AuthService } from './auth.service';
 export class ClinicalStoreService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
-  private readonly apiBaseUrl = 'http://localhost:8080/api/v1';
+  private readonly apiBaseUrl = '/api/v1';
 
   public static getFormattedCurrentDate(): string {
     const now = new Date();
@@ -686,7 +688,7 @@ export class ClinicalStoreService {
           )
           .pipe(
             tap((res) => {
-              const fullUrl = res.url.startsWith('http') ? res.url : `http://localhost:8080${res.url}`;
+              const fullUrl = res.url;
               this.profileState.update((prev) => ({
                 ...prev,
                 avatarUrl: fullUrl,
@@ -716,7 +718,7 @@ export class ClinicalStoreService {
       )
       .pipe(
         tap((res) => {
-          const fullUrl = res.url.startsWith('http') ? res.url : `http://localhost:8080${res.url}`;
+          const fullUrl = res.url;
           this.patientRecordState.update((prev) => ({
             ...prev,
             avatarUrl: fullUrl,
@@ -750,7 +752,7 @@ export class ClinicalStoreService {
       .replace(/^-|-$/g, '');
     const approach = (dto.abordagemClinica || 'tcc') as ClinicalApproachKey;
     const avatar = dto.avatarUrl
-      ? (dto.avatarUrl.startsWith('http') ? dto.avatarUrl : `http://localhost:8080${dto.avatarUrl}`)
+      ? dto.avatarUrl
       : undefined;
 
     this.profileState.update((prev) => ({
@@ -947,9 +949,7 @@ export class ClinicalStoreService {
     const shortCode = `#${dto.idPaciente.slice(0, 4).toUpperCase()}`;
     const avatar =
       dto.avatarUrl && dto.avatarUrl.trim().length > 0
-        ? dto.avatarUrl.startsWith('http')
-          ? dto.avatarUrl
-          : `http://localhost:8080${dto.avatarUrl}`
+        ? dto.avatarUrl
         : ClinicalStoreService.DEFAULT_PATIENT_AVATAR;
 
     this.patientRecordState.update((prev) => ({
@@ -1893,5 +1893,111 @@ export class ClinicalStoreService {
       isExporting: false,
       lastPortabilityEmissionLabel: `Última emissão de portabilidade: Hoje às ${timeStr} (Log #43)`,
     }));
+  }
+
+  // 7. Dashboard Página Inicial State & Actions
+  private readonly dashboardSummaryState = signal<DashboardResumoApiDto>({
+    repasseLiquidoMes: 0,
+    valorBrutoMes: 0,
+    retencaoClinicaMes: 0,
+    variacaoPercentualMes: 0,
+    sparklineFinanceiro: [],
+    totalConsultasHoje: 0,
+    totalTelessaudeHoje: 0,
+    totalPresenciaisHoje: 0,
+    proximaConsulta: null,
+    taxaAssiduidade: 100,
+    pacientesAtivos: 0,
+    prontuariosEmRascunho: 0,
+    agendamentosHoje: [],
+    atendimentosRecentes: [],
+  });
+
+  public readonly dashboardSummary = this.dashboardSummaryState.asReadonly();
+
+  public loadDashboardSummaryFromBackend(): void {
+    if (this.patientsList().length === 0) {
+      this.loadPatientsFromBackend();
+    }
+    this.http
+      .get<DashboardResumoApiDto>(`${this.apiBaseUrl}/dashboard/resumo`)
+      .pipe(catchError(() => of(null)))
+      .subscribe((dto) => {
+        if (dto) {
+          this.dashboardSummaryState.set(dto);
+        }
+      });
+  }
+
+  public createQuickAppointmentWithOptionalPatient(
+    payload: QuickAppointmentFormPayload
+  ): Observable<AgendamentoApiDto> {
+    const idPsicologo = this.authService.currentPsychologistId() ?? this.profileState().id;
+    if (!idPsicologo) {
+      return throwError(() => new Error('Psicólogo não autenticado para realizar o agendamento.'));
+    }
+
+    const resolvePatient$: Observable<PacienteApiDto> =
+      payload.mode === 'new' && payload.newPatient
+        ? this.http
+            .post<PacienteApiDto>(`${this.apiBaseUrl}/pacientes`, {
+              nome: payload.newPatient.fullName.trim(),
+              cpf: payload.newPatient.cpf.trim(),
+              dataNascimento: ClinicalStoreService.parseBirthDateToIso(payload.newPatient.birthDate),
+              email: payload.newPatient.email.trim() || 'paciente@psicosafe.com.br',
+              telefone: payload.newPatient.phone.trim(),
+              contatoEmergenciaNome:
+                payload.newPatient.emergencyContactName.trim() || 'Contato a confirmar',
+              contatoEmergenciaTelefone:
+                payload.newPatient.emergencyContactPhone.trim() || payload.newPatient.phone.trim(),
+              enderecoLocalSessao: 'Endereço residencial a confirmar',
+            } satisfies PacienteRequestDto)
+            .pipe(
+              tap((newDto) => {
+                this.patientsList.update((list) => [newDto, ...list]);
+                this.applyPacienteDto(newDto);
+              })
+            )
+        : (() => {
+            const existing =
+              this.patientsList().find((p) => p.idPaciente === payload.patientId) ??
+              this.patientsList()[0];
+            if (!existing) {
+              return throwError(() => new Error('Selecione ou cadastre um paciente válido.'));
+            }
+            return of(existing);
+          })();
+
+    return resolvePatient$.pipe(
+      switchMap((patient) => {
+        const modalidade: ModalidadeAtendimentoApi =
+          payload.modality === 'Telessaúde' ? 'TELECONSULTA' : 'PRESENCIAL';
+        const dataHoraSessao = `${payload.date}T${payload.startTime}:00`;
+        const requestBody: AgendamentoRequestDto = {
+          idPsicologo,
+          idPaciente: patient.idPaciente,
+          dataHoraSessao,
+          modalidade,
+          status: 'AGENDADO',
+          enderecoLocalSessao:
+            payload.modality === 'Presencial'
+              ? 'Consultório PsicoSafe • Sala 1'
+              : patient.enderecoLocalSessao,
+          duracaoMinutos: payload.durationMinutes,
+          tipoSessao: payload.sessionType,
+          repetirSemanalmente: payload.repeatWeekly,
+          quantidadeSemanas: payload.repeatWeekly ? 4 : 1,
+          valorHonorario: payload.honorarioValue,
+          enviarLembrete24h: payload.sendReminder24h,
+        };
+        return this.http.post<AgendamentoApiDto>(`${this.apiBaseUrl}/agendamentos`, requestBody);
+      }),
+      tap((agendamentoDto) => {
+        const updated = [agendamentoDto, ...this.agendamentosList()];
+        this.agendamentosList.set(updated);
+        this.syncScheduleSlotsFromBackend(updated);
+        this.loadDashboardSummaryFromBackend();
+      })
+    );
   }
 }

@@ -48,7 +48,7 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
         completed = true;
       });
 
-    const req = httpMock.expectOne('http://localhost:8080/api/v1/auth/login');
+    const req = httpMock.expectOne('/api/v1/auth/login');
     expect(req.request.method).toBe('POST');
     req.flush({
       token: 'jwt-token-mock',
@@ -114,7 +114,7 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
     store.loadPatientsFromBackend();
 
     const req = httpMock.expectOne(
-      'http://localhost:8080/api/v1/pacientes?incluirInativos=true'
+      '/api/v1/pacientes?incluirInativos=true'
     );
     expect(req.request.method).toBe('GET');
     req.flush([
@@ -142,7 +142,7 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
     authService
       .login({ login: 'usuario@psicosafe.com.br', senha: 'MinhaSenhaSegura' })
       .subscribe();
-    const loginReq = httpMock.expectOne('http://localhost:8080/api/v1/auth/login');
+    const loginReq = httpMock.expectOne('/api/v1/auth/login');
     loginReq.flush({
       token: 'jwt-token-mock',
       tipo: 'Bearer',
@@ -161,7 +161,7 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
     });
 
     const req = httpMock.expectOne(
-      'http://localhost:8080/api/v1/uploads/psicologo/22222222-2222-2222-2222-222222222222'
+      '/api/v1/uploads/psicologo/22222222-2222-2222-2222-222222222222'
     );
     expect(req.request.method).toBe('POST');
     req.flush({
@@ -208,9 +208,9 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
 
   it('deve isolar a foto do paciente e restaurar avatar padrao ao criar novo paciente ou selecionar paciente sem foto', () => {
     // 1. Simula paciente com avatar customizado
-    store.setPatientAvatarPreview('http://localhost:8080/api/v1/uploads/pacientes/foto-lucas.png');
+    store.setPatientAvatarPreview('/api/v1/uploads/pacientes/foto-lucas.png');
     expect(store.patientRecord().avatarUrl).toBe(
-      'http://localhost:8080/api/v1/uploads/pacientes/foto-lucas.png'
+      '/api/v1/uploads/pacientes/foto-lucas.png'
     );
 
     // 2. Ao criar novo paciente, o avatar DEVE ser resetado para o padrão
@@ -221,7 +221,7 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
 
     // 3. Ao carregar/selecionar outro paciente sem foto (avatarUrl vazio/nulo), deve usar a foto padrão
     store.loadPatientsFromBackend();
-    const req = httpMock.expectOne('http://localhost:8080/api/v1/pacientes?incluirInativos=true');
+    const req = httpMock.expectOne('/api/v1/pacientes?incluirInativos=true');
     req.flush([
       {
         idPaciente: '44444444-4444-4444-4444-444444444444',
@@ -242,5 +242,133 @@ describe('Sistema Psicologia Interface — Integração Front-End & Back-End', (
     expect(store.patientRecord().id).toBe('44444444-4444-4444-4444-444444444444');
     expect(store.patientRecord().avatarUrl).toBe(ClinicalStoreService.DEFAULT_PATIENT_AVATAR);
     expect(store.patientRecord().avatarUrl).not.toContain('foto-lucas.png');
+  });
+
+  it('deve carregar resumo do dashboard da pagina inicial e criar agendamento com cadastro rapido de paciente', () => {
+    const authService = TestBed.inject(AuthService);
+    const store = TestBed.inject(ClinicalStoreService);
+
+    authService.login({ login: 'dra.juliana@psicosafe.com.br', senha: 'MinhaSenhaSegura' }).subscribe();
+    httpMock.expectOne('/api/v1/auth/login').flush({
+      token: 'jwt-token-mock',
+      tipo: 'Bearer',
+      login: 'dra.juliana@psicosafe.com.br',
+      perfil: 'PSICOLOGO',
+      idPsicologoVinculado: '22222222-2222-2222-2222-222222222222',
+      expiraEm: 3600000,
+    });
+
+    store.loadDashboardSummaryFromBackend();
+    httpMock.expectOne('/api/v1/pacientes?incluirInativos=true').flush([]);
+    httpMock.expectOne('/api/v1/dashboard/resumo').flush({
+      repasseLiquidoMes: 8925.0,
+      valorBrutoMes: 12750.0,
+      retencaoClinicaMes: 3825.0,
+      variacaoPercentualMes: 14.2,
+      sparklineFinanceiro: [100, 200, 350],
+      totalConsultasHoje: 2,
+      totalTelessaudeHoje: 1,
+      totalPresenciaisHoje: 1,
+      proximaConsulta: {
+        idAgendamento: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        horarioInicio: '09:00',
+        minutosParaInicio: 15,
+      },
+      taxaAssiduidade: 92.5,
+      pacientesAtivos: 34,
+      prontuariosEmRascunho: 2,
+      agendamentosHoje: [],
+      atendimentosRecentes: [],
+    });
+
+    expect(store.dashboardSummary().repasseLiquidoMes).toBe(8925.0);
+    expect(store.dashboardSummary().totalConsultasHoje).toBe(2);
+    expect(store.dashboardSummary().prontuariosEmRascunho).toBe(2);
+
+    let createdId = '';
+    store
+      .createQuickAppointmentWithOptionalPatient({
+        mode: 'new',
+        newPatient: {
+          fullName: 'Mariana Duarte Farias',
+          cpf: '412.890.345-60',
+          birthDate: '18/07/1995',
+          phone: '(11) 98124-5502',
+          email: 'mariana.farias@email.com',
+          emergencyContactName: 'Roberto Farias',
+          emergencyContactPhone: '(11) 97230-1144',
+          sendLgpdWhatsapp: true,
+        },
+        modality: 'Telessaúde',
+        date: '2026-11-20',
+        startTime: '16:00',
+        durationMinutes: 50,
+        sessionType: 'Sessão Individual Ordinária',
+        repeatWeekly: true,
+        honorarioValue: 250,
+        sendReminder24h: true,
+      })
+      .subscribe((dto) => {
+        createdId = dto.idAgendamento;
+      });
+
+    const pacReq = httpMock.expectOne('/api/v1/pacientes');
+    expect(pacReq.request.method).toBe('POST');
+    pacReq.flush({
+      idPaciente: '55555555-5555-5555-5555-555555555555',
+      nome: 'Mariana Duarte Farias',
+      cpf: '412.890.345-60',
+      dataNascimento: '1995-07-18',
+      email: 'mariana.farias@email.com',
+      telefone: '(11) 98124-5502',
+      contatoEmergenciaNome: 'Roberto Farias',
+      contatoEmergenciaTelefone: '(11) 97230-1144',
+      enderecoLocalSessao: 'Endereço residencial a confirmar',
+      ativo: true,
+      deletedAt: null,
+    });
+
+    const agReq = httpMock.expectOne('/api/v1/agendamentos');
+    expect(agReq.request.method).toBe('POST');
+    expect(agReq.request.body.duracaoMinutos).toBe(50);
+    expect(agReq.request.body.repetirSemanalmente).toBe(true);
+    expect(agReq.request.body.valorHonorario).toBe(250);
+    agReq.flush({
+      idAgendamento: '66666666-6666-6666-6666-666666666666',
+      idPsicologo: '22222222-2222-2222-2222-222222222222',
+      nomePsicologo: 'Dra. Juliana Mendes',
+      idPaciente: '55555555-5555-5555-5555-555555555555',
+      nomePaciente: 'Mariana Duarte Farias',
+      contatoEmergenciaNome: 'Roberto Farias',
+      contatoEmergenciaTelefone: '(11) 97230-1144',
+      dataHoraSessao: '2026-11-20T16:00:00',
+      modalidade: 'TELECONSULTA',
+      status: 'AGENDADO',
+      enderecoLocalSessao: 'Endereço residencial a confirmar',
+      duracaoMinutos: 50,
+      tipoSessao: 'Sessão Individual Ordinária',
+      enviarLembrete24h: true,
+      ativo: true,
+      deletedAt: null,
+    });
+
+    httpMock.expectOne('/api/v1/dashboard/resumo').flush({
+      repasseLiquidoMes: 8925.0,
+      valorBrutoMes: 12750.0,
+      retencaoClinicaMes: 3825.0,
+      variacaoPercentualMes: 14.2,
+      sparklineFinanceiro: [],
+      totalConsultasHoje: 2,
+      totalTelessaudeHoje: 1,
+      totalPresenciaisHoje: 1,
+      proximaConsulta: null,
+      taxaAssiduidade: 92.5,
+      pacientesAtivos: 35,
+      prontuariosEmRascunho: 2,
+      agendamentosHoje: [],
+      atendimentosRecentes: [],
+    });
+
+    expect(createdId).toBe('66666666-6666-6666-6666-666666666666');
   });
 });

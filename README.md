@@ -1,59 +1,74 @@
-# SistemaPsicologiaInterface
+# PsicoSafe Interface — Front-End de Gestão Clínica & Telepsicologia
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.5.
+Aplicação Web Single-Page Application (SPA) desenvolvida em **Angular 22**, **TypeScript Estrito** e **Tailwind CSS 4**, projetada sob o Design System *"Serene Clinical & Compliance"* e integrada à API REST `sistema-psicologia`.
 
-## Development server
+---
 
-To start a local development server, run:
+## 1. Principais Módulos e Funcionalidades
 
-```bash
-ng serve
-```
+- **Início / Dashboard Clínico & Financeiro (`/inicio`, `/inicio-e`):**
+  - Indicadores em tempo real (Repasse Líquido Carnê-Leão com sparkline, Consultas Marcadas Hoje e Taxa de Assiduidade).
+  - Lista de agendamentos do dia, atendimentos recentes com status de prontuário e modal de **Novo Agendamento Clínico** com fluxo integrado de **Cadastro Rápido de Paciente**.
+- **Autenticação & Credenciamento Profissional (`/login`):**
+  - Login JWT com RBAC (`PSICOLOGO`, `RECEPCAO`, `ADMIN`) e cadastro de psicólogo titular com validação de registro CRP.
+- **Perfil do Psicólogo & Habilitação (`/perfil-profissional`, `/perfil-profissional-e`):**
+  - Identificação civil, upload de foto oficial, credencial CRP/CFP, abordagem teórica e parâmetros de sala criptografada de telepsicologia.
+- **Gestão e Cadastro de Pacientes (`/gestao-e-cadastro`, `/gestao-e-cadastro-e`):**
+  - Prontuário cadastral com isolamento de foto por paciente, Protocolo de Segurança Mandatório para Telessaúde (Res. CFP nº 11/2018), status ativo/inativo (*Soft Delete*) e impressão de ficha cadastral.
+- **Agenda Clínica Diária, Semanal e Mensal (`/agenda`, `/agenda-e`):**
+  - Alternância reativa entre visões **Diária**, **Semanal** e **Mensal**, métricas de ocupação e criação de horários presenciais ou teleconsulta.
+- **Atendimentos & Registro Pós-Sessão (`/painel-clinico`, `/painel-clinico-e`):**
+  - Lista de sessões realizadas com pendência documental e segregação normativa (Res. CFP nº 001/2009) em duas guias: **Prontuário Psicológico Formal** e **Registro Documental Privativo (AES-256-GCM)**, com assinatura digital SHA-256 imutável.
+- **Faturamento & Split de Pagamentos (`/faturamento`, `/faturamento-e`):**
+  - Conciliação automática de split tributário (**30% Clínica NFS-e / 70% Psicólogo Carnê-Leão**), liquidação D+1, exportação CSV para Carnê-Leão e download de comprovante XML.
+- **Portal de Privacidade, Exportação e Auditoria LGPD (`/portal-privacidade`, `/portal-privacidade-e`):**
+  - Busca de titular, exportação criptográfica em lote (**PDF/A-1b ISO 19005-1 + JSON Estruturado**) e visualização em tempo real da trilha `LOGS_AUDITORIA`.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+> Para detalhes completos da arquitetura de componentes e design tokens, consulte [documentation.md](file:///home/anderson/IdeaProjects/sistema-psicologia-interface/documentation.md).
 
-## Code scaffolding
+---
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## 2. Arquitetura Técnica & Segurança
 
-```bash
-ng generate component component-name
-```
+- **Standalone Components & Lazy Loading:** Todas as rotas são carregadas sob demanda (`loadComponent`) com `ChangeDetectionStrategy.OnPush`.
+- **Estado Reativo com Angular Signals:** Gerenciamento centralizado em `ClinicalStoreService`, `AuthService` e `LayoutService` usando `signal()`, `computed()` e `effect()`.
+- **Segurança JWT & RBAC no Cliente:**
+  - `authInterceptor`: Anexa automaticamente `Authorization: Bearer <token>` nas requisições para `/api/v1/**`.
+  - `clinicalRbacGuard`: Restringe o acesso do perfil `RECEPCAO` aos módulos clínicos e de exportação LGPD.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
-```
+## 3. Execução via Docker Compose (Full-Stack)
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+O projeto conta com [Dockerfile](file:///home/anderson/IdeaProjects/sistema-psicologia-interface/Dockerfile) multi-stage (Node 22 Alpine + Nginx 1.27 Alpine), [nginx.conf](file:///home/anderson/IdeaProjects/sistema-psicologia-interface/nginx.conf) configurado com proxy reverso para `/api/` e `/uploads/`, e [docker-compose.yml](file:///home/anderson/IdeaProjects/sistema-psicologia-interface/docker-compose.yml) integrado ao back-end e ao MySQL 8.4:
 
 ```bash
-ng e2e
+docker compose up --build -d
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+- **Front-End (Nginx + Angular):** `http://localhost:4200`
+- **Back-End (Spring Boot API):** `http://localhost:8080`
+- **MySQL 8.4:** `localhost:3306`
 
-## Additional Resources
+---
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## 4. Desenvolvimento Local e Testes
+
+### Pré-requisitos
+- Node.js `20.x` ou `22.x`
+- npm `10.x` ou `11.x`
+
+### Comandos
+```bash
+# 1. Instalar dependências
+npm install
+
+# 2. Servidor de desenvolvimento com proxy para http://localhost:8080 (proxy.conf.json)
+npm start
+
+# 3. Build otimizado de produção (dist/sistema-psicologia-interface/browser)
+npm run build
+
+# 4. Executar suíte de testes unitários e de integração (Vitest)
+npx ng test --watch=false
+```

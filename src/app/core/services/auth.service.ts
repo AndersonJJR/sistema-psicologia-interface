@@ -16,7 +16,7 @@ const SESSION_STORAGE_KEY = 'psicosafe_jwt_session';
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = 'http://localhost:8080/api/v1/auth';
+  private readonly apiBaseUrl = '/api/v1/auth';
 
   private readonly sessionState = signal<TokenResponseDto | null>(this.loadStoredSession());
 

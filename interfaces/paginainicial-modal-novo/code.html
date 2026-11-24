@@ -1,0 +1,426 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-primary-fixed-variant":"#00504a","tertiary-fixed-dim":"#b6c4ff","surface-variant":"#d3e4fe","on-error":"#ffffff","surface-bright":"#f8f9ff","inverse-on-surface":"#eaf1ff","surface-container-highest":"#d3e4fe","secondary-fixed":"#85f8c4","on-tertiary-container":"#e6e9ff","error-container":"#ffdad6","on-secondary-container":"#00714e","surface-tint":"#006a63","on-surface-variant":"#3e4947","on-tertiary":"#ffffff","on-secondary":"#ffffff","surface-container-high":"#dce9ff","surface":"#f8f9ff","on-tertiary-fixed":"#00164e","surface-container-lowest":"#ffffff","on-background":"#0b1c30","inverse-primary":"#80d5cb","on-primary":"#ffffff","primary-fixed-dim":"#80d5cb","primary":"#005c55","surface-container":"#e5eeff","on-surface":"#0b1c30","on-tertiary-fixed-variant":"#264191","primary-fixed":"#9cf2e8","secondary-fixed-dim":"#68dba9","surface-dim":"#cbdbf5","outline-variant":"#bdc9c6","secondary-container":"#82f5c1","on-primary-fixed":"#00201d","on-primary-container":"#a3faef","tertiary":"#324c9c","inverse-surface":"#213145","surface-container-low":"#eff4ff","on-secondary-fixed":"#002114","on-error-container":"#93000a","outline":"#6e7977","tertiary-fixed":"#dce1ff","background":"#f8f9ff","primary-container":"#0f766e","on-secondary-fixed-variant":"#005137","error":"#ba1a1a","tertiary-container":"#4c65b6","secondary":"#006c4a"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-md":"1rem","margin":"2rem","gutter":"1.5rem","space-lg":"1.5rem","space-xs":"0.25rem","space-sm":"0.5rem","space-xl":"2.5rem"},fontFamily:{"body-md":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"display":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"]},fontSize:{"body-md":["14px",{"lineHeight":"22px","fontWeight":"400"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.03em","fontWeight":"500"}],"display":["36px",{"lineHeight":"44px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"26px","fontWeight":"400"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"600"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"600"}],"headline-sm":["18px",{"lineHeight":"24px","fontWeight":"600"}],"headline-md":["22px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg":["30px",{"lineHeight":"38px","letterSpacing":"-0.015em","fontWeight":"600"}]}}}}</script></head><body class="bg-surface font-body-md text-on-surface"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between py-space-lg px-space-md"><div class="flex flex-col gap-space-lg"><div class="flex items-center gap-space-sm px-space-sm"><div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[24px]">psychology</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary tracking-tight font-bold">PsicoSafe</span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Clínica &amp; Telepsi</span></div></div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-primary-container text-on-primary shadow-sm"><a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg font-label-lg transition-colors bg-primary-container text-on-primary shadow-sm" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span><span>Início</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="perfil-profissional" href="#"><span class="material-symbols-outlined text-[20px]">badge</span><span>Perfil Profissional</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="pacientes" href="#"><span class="material-symbols-outlined text-[20px]">group</span><span>Pacientes</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="agenda" href="#"><span class="material-symbols-outlined text-[20px]">calendar_today</span><span>Agenda</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="atendimento-clinico" href="#"><span class="material-symbols-outlined text-[20px]">video_camera_front</span><span>Atendimento Clínico</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="faturamento-split" href="#"><span class="material-symbols-outlined text-[20px]">payments</span><span>Faturamento &amp; Split</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="privacidade-lgpd" href="#"><span class="material-symbols-outlined text-[20px]">verified_user</span><span>Privacidade &amp; LGPD</span></a></nav></div><div class="flex flex-col gap-space-sm pt-space-md"><div class="p-space-sm rounded-xl bg-surface-container flex items-center gap-space-sm"><span class="material-symbols-outlined text-secondary text-[20px]">lock</span><div class="flex flex-col"><span class="font-label-sm text-label-sm text-secondary font-semibold">CFP Art. 9º / e-Psi</span><span class="font-label-sm text-label-sm text-on-surface-variant">Sessões Criptografadas</span></div></div><nav class="flex flex-col" data-active-classes="bg-primary-container text-on-primary shadow-sm"><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="suporte" href="#"><span class="material-symbols-outlined text-[20px]">help_center</span><span>Ajuda &amp; Suporte</span></a></nav></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-gutter"><div class="h-16 w-full flex items-center justify-between"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">calendar_month</span><span class="font-body-md text-body-md text-on-surface font-medium">24 de Maio de 2024</span></div><div class="hidden md:flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-secondary-container/40"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-md text-label-md text-on-secondary-container font-semibold">CFP e-Psi Ativo &amp; LGPD Conforme</span></div></div><div class="flex items-center gap-space-md"><button class="p-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors relative" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span></button><div class="flex items-center gap-space-sm pl-space-sm"><div class="flex flex-col text-right"><span class="font-label-lg text-label-lg text-on-surface font-semibold">Dra. Juliana Mendes</span><span class="font-label-sm text-label-sm text-primary font-medium">CRP 06/142980</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><main class="relative pt-16 bg-surface w-full px-gutter py-space-lg"><div class="flex flex-col w-full gap-space-lg">
+<!-- 1. Cabeçalho de Boas-Vindas & Ações Rápidas -->
+<header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex flex-wrap items-center gap-space-sm mb-1">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+          Certificado e-Psi Ativo (Validade 2025)
+        </span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[15px]">shield</span>
+          Ambiente CFP &amp; LGPD Conforme
+        </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">
+        Bom dia, Dra. Juliana Mendes
+      </h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+        Aqui está o resumo da sua prática clínica e financeira para hoje, 24 de Maio de 2024.
+      </p>
+</div>
+<!-- Quick Actions -->
+<div class="flex items-center gap-space-sm self-start lg:self-center">
+<button class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container-high text-primary hover:bg-surface-variant font-label-lg text-label-lg transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[20px]">videocam</span>
+<span>Iniciar Consulta Rápida</span>
+</button>
+<button class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg transition-colors shadow-md ring-2 ring-offset-2 ring-primary" type="button">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span>+ Novo Agendamento</span>
+</button>
+</div>
+</header>
+<!-- 2. Painel de Indicadores Principais (KPIs / Financeiro & Clínico) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- Card 1: Faturamento do Mês / Lucro Líquido Repassado -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Repasse Líquido (Carnê-Leão)</span>
+<span class="font-display text-display text-primary tracking-tight mt-1">R$ 8.925,00</span>
+</div>
+<div class="w-10 h-10 rounded-xl bg-secondary-container/40 text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">payments</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm">Bruto: R$ 12.750 | Ret. (30%): R$ 3.825</span>
+<span class="inline-flex items-center text-secondary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+            +14.2%
+          </span>
+</div>
+<!-- Sparkline sutil -->
+<div class="mt-2 w-full h-8">
+<svg class="w-full h-full text-secondary" fill="none" preserveAspectRatio="none" viewBox="0 0 100 24">
+<path d="M0 20 L15 17 L30 19 L45 12 L60 14 L75 8 L90 10 L100 3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M0 20 L15 17 L30 19 L45 12 L60 14 L75 8 L90 10 L100 3 L100 24 L0 24 Z" fill="currentColor" fill-opacity="0.08"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Card 2: Consultas Hoje -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Consultas Marcadas Hoje</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display text-display text-on-surface font-bold">6</span>
+<span class="font-label-md text-label-md text-on-surface-variant">sessões</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-xl bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">calendar_today</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex flex-col gap-1.5">
+<div class="flex items-center gap-space-sm">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-primary"></span> 4 Telessaúde
+          </span>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span> 2 Presenciais
+          </span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[15px]">alarm</span>
+          Próxima às 09:00 (em 15 minutos)
+        </div>
+</div>
+</div>
+<!-- Card 3: Taxa de Ocupação & Assiduidade -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Taxa de Assiduidade</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display text-display text-on-surface font-bold">92.5%</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-xl bg-surface-container-high text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">trending_up</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex flex-col gap-2">
+<div class="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 92.5%;"></div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>34 Pacientes ativos</span>
+<span class="font-medium text-on-surface">Excelente índice</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Documentos Pendentes de Assinatura -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Pendências Regulatórias</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-display text-display text-error font-bold">2</span>
+<span class="font-label-md text-label-md text-on-surface-variant">em rascunho</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-xl bg-error-container text-on-error-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">draw</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex flex-col gap-1.5">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Prontuários aguardando assinatura ICP-Brasil</span>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[15px] text-tertiary">info</span>
+<span>Prazo CFP: registro em até 48h</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Seção em Grid de 2 Colunas para Operações Centrais -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- COLUNA ESQUERDA: Próximos Agendamentos do Dia (7 Colunas no Desktop) -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">event_upcoming</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Agendamentos de Hoje</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-semibold">24 Mai</span>
+</div>
+<a class="inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-container font-semibold transition-colors" data-path="agenda" href="#">
+<span>Ver Agenda Completa</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+<!-- Card com destaque: Próxima Sessão Imediata (09:00 - 09:50) -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-lg shadow-md flex flex-col gap-space-md">
+<!-- Tarja indicadora de prioridade clínica -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-container/50 text-on-secondary-container font-label-sm text-label-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+              Próxima Consulta • 09:00 - 09:50
+            </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">videocam</span>
+              Telessaúde
+            </span>
+</div>
+<span class="font-label-sm text-label-sm text-error font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+            Inicia em 15 minutos
+          </span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center gap-space-md">
+<img class="w-14 h-14 rounded-full object-cover shadow-sm flex-shrink-0" data-alt="Close up professional portrait of a calm 32 year old man with glasses and casual attire looking towards camera in a soft daylight modern clinical setting, psychological therapy client avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdzfp-oLwH023HOyXw_E6RyEjK7YVduVlKgz0JG160wQ0r1cIUSo39HJg84vM-dvY8ravEmMIWTPOpYWvZvqG5jOeTg-VnqR9j-LOAdK9PkLvg-GA3RUvykv7vAcuBL50d5eaz3z-P1bTCpZn1kJmJYC8CzU5lxvJgcH2S6x3NCHYnuvgcXtB5VQf-gPoEM7VZAY8otxuO6x5O-nTjJ7JCDfcBrKuFLedIVBFy8F7H">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">Lucas Gabriel Albuquerque Rocha</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">32 anos</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="font-medium text-primary">Terapia Cognitivo-Comportamental (TCC)</span>
+<span>•</span>
+<span>Sessão #14</span>
+<span>•</span>
+<span class="text-secondary font-medium">Link seguro criptografado pronto</span>
+</div>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">verified_user</span>
+<span>Sala com criptografia ponta a ponta e-Psi (P2P WebRTC / AES-256)</span>
+</div>
+<span class="text-on-surface-variant font-label-sm text-label-sm font-semibold">Sala #PS-8492</span>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<button class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[20px]">video_call</span>
+<span>Entrar na Sala Segura</span>
+</button>
+<button class="inline-flex items-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface hover:bg-surface-variant font-label-lg text-label-lg transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">clinical_notes</span>
+<span>Abrir Prontuário</span>
+</button>
+<button class="p-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" title="Mais opções da consulta" type="button">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Lista dos agendamentos subsequentes do dia -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold px-1">Sequência da Tarde</span>
+<!-- Item 1: Beatriz Lima -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-shadow flex items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-surface-container-high text-on-surface">
+<span class="font-label-lg text-label-lg font-bold">11:00</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">11:50</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Beatriz Lima</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">Presencial • Sala 2</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Ansiedade Generalizada (TAG) • Sessão #08</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="hidden sm:inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary font-semibold">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+              Confirmada via WhatsApp
+            </span>
+<button class="p-2 rounded-lg text-primary hover:bg-surface-container-high transition-colors" title="Ver ficha" type="button">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Item 2: Carlos Eduardo -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-shadow flex items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-surface-container-high text-on-surface">
+<span class="font-label-lg text-label-lg font-bold">14:30</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">15:20</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Carlos Eduardo Moreira</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">Presencial • Sala 1</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Depressão Maior Unipolar • Sessão #21</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="hidden sm:inline-flex items-center gap-1 font-label-sm text-label-sm text-tertiary font-semibold">
+<span class="material-symbols-outlined text-[16px]">hourglass_top</span>
+              Aguardando Recepção
+            </span>
+<button class="p-2 rounded-lg text-primary hover:bg-surface-container-high transition-colors" title="Ver ficha" type="button">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Item 3: Aline Barros -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm hover:shadow-md transition-shadow flex items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-surface-container-high text-on-surface">
+<span class="font-label-lg text-label-lg font-bold">15:30</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">16:20</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Aline Barros Silva</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Telessaúde</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Transição de Carreira &amp; Burnout • Sessão #04</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="hidden sm:inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary font-semibold">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+              Confirmada
+            </span>
+<button class="p-2 rounded-lg text-primary hover:bg-surface-container-high transition-colors" title="Ver ficha" type="button">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- COLUNA DIREITA: Últimas Consultas Realizadas & Histórico Recente (5 Colunas no Desktop) -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">history_edu</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Atendimentos Recentes</h2>
+</div>
+<a class="inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-container font-semibold transition-colors" data-path="pacientes" href="#">
+<span>Ver Prontuários</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm divide-y-0">
+<!-- Registro 1: Mariana F. Costa -->
+<div class="p-space-sm rounded-lg hover:bg-surface-container-low transition-colors flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Mariana F. Costa</span>
+<span class="px-2 py-0.5 rounded text-[11px] bg-surface-container text-on-surface-variant font-medium">Presencial</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Hoje, 08:00</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+<span>Prontuário Finalizado &amp; Assinado</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold">R$ 250,00 <span class="text-secondary font-normal">(Pix)</span></span>
+</div>
+</div>
+<div class="w-full h-px bg-surface-container"></div>
+<!-- Registro 2: Renata Valença -->
+<div class="p-space-sm rounded-lg hover:bg-surface-container-low transition-colors flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Renata Valença</span>
+<span class="px-2 py-0.5 rounded text-[11px] bg-surface-container text-on-surface-variant font-medium">Telessaúde</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">23 Mai, 17:00</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+<span>Prontuário Finalizado &amp; Assinado</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold">R$ 220,00 <span class="text-secondary font-normal">(Pix)</span></span>
+</div>
+</div>
+<div class="w-full h-px bg-surface-container"></div>
+<!-- Registro 3: Guilherme R. (Rascunho Pendente) -->
+<div class="p-space-sm rounded-lg bg-surface-container/50 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Guilherme R.</span>
+<span class="px-2 py-0.5 rounded text-[11px] bg-surface-container text-on-surface-variant font-medium">Telessaúde</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">23 Mai, 15:00</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-error font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">pending_actions</span>
+<span>Rascunho Salvo às 15:58 (Pendente)</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold">R$ 220,00 <span class="text-on-surface-variant font-normal">(Em conciliação)</span></span>
+</div>
+<div class="flex items-center justify-end pt-1">
+<button class="inline-flex items-center gap-1 text-primary hover:underline font-label-sm text-label-sm font-semibold" type="button">
+<span>Retomar e Assinar Digitalmente</span>
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+</div>
+<div class="w-full h-px bg-surface-container"></div>
+<!-- Registro 4: Talita Duarte -->
+<div class="p-space-sm rounded-lg hover:bg-surface-container-low transition-colors flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Talita Duarte</span>
+<span class="px-2 py-0.5 rounded text-[11px] bg-surface-container text-on-surface-variant font-medium">Telessaúde</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">22 Mai, 14:00</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span>
+<span>Prontuário Arquivado</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold">R$ 220,00 <span class="text-secondary font-normal">(Liquidado)</span></span>
+</div>
+</div>
+<!-- Rodapé do Card -->
+<div class="pt-space-sm">
+<a class="w-full py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-primary font-label-md text-label-md font-semibold text-center flex items-center justify-center gap-1.5 transition-colors" data-path="atendimento-clinico" href="#">
+<span>Acessar Relatório Completo de Atendimentos</span>
+<span class="material-symbols-outlined text-[16px]">receipt_long</span>
+</a>
+</div>
+</div>
+<!-- Card Complementar: Foto/Perfil e Supervisão Clínica -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-center gap-space-md">
+<img class="w-20 h-20 rounded-xl object-cover shadow-sm flex-shrink-0" data-alt="Warm modern therapy room office interior with ergonomic armchair bookshelf soft lighting plants and neutral tones aesthetic professional psychologist consultation space" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3NiNac_cvHzl4C9zPgxVm6F3VeBSmqu-O0mjQ5YsQPHEsWNL-vWh0LnRgaux9iHLHzWAK4bMTyFYxsAqgDsaKVknA3lA_96J27rhzuTN9RBAdNSH3idTkTCd6T3y5dgrhjYvkOCahWadUfF3TE45yyUF4fDX1zko3sLZLEdFVuaW5aiG6Hg6JVk4OY5SL3X69hVm9DdUjvwDr4CFKLHLp9-PA7SXvlgQiBAj0HUAt">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary font-semibold uppercase tracking-wider">Supervisão Clínica &amp; Estudos</span>
+<span class="font-label-lg text-label-lg text-on-surface font-bold mt-0.5">Próxima Reunião Clínica</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Grupo de Intervisão TCC: Sexta-feira às 18:30 (Sala Virtual 3).</p>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. Barra Inferior de Avisos & Lembretes Importantes (Compliance CFP & Backup) -->
+<aside class="w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-start md:items-center gap-space-sm">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">policy</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-bold">Lembrete Regulatório CFP &amp; Segurança de Dados</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Resolução CFP nº 01/2009 exige guarda do prontuário por no mínimo 5 anos. Seus backups na nuvem estão criptografados e sincronizados hoje às 08:30.
+        </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm flex-shrink-0 self-end md:self-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-sm text-label-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+        Status: 100% Sincronizado
+      </span>
+<button class="p-2 text-on-surface-variant hover:text-on-surface transition-colors" title="Visualizar logs de conformidade" type="button">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+</div>
+</aside>
+</div></main></div><div aria-modal="true" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm overflow-y-auto" id="modal-novo-agendamento" role="dialog"><div class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"><div class="flex items-start justify-between p-space-lg border-b border-surface-container bg-surface-bright"><div class="flex items-start gap-space-sm"><div class="w-11 h-11 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center flex-shrink-0 shadow-sm"><span class="material-symbols-outlined text-[24px]">event_available</span></div><div class="flex flex-col"><div class="flex items-center gap-2"><h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Novo Agendamento Clínico</h3></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Cadastro de consulta com link seguro e conciliação financeira automática.</p></div></div><button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" title="Fechar modal" type="button"><span class="material-symbols-outlined text-[20px]">close</span></button></div><div class="p-space-lg flex flex-col gap-space-md max-h-[75vh] overflow-y-auto"><div class="flex flex-col gap-1.5"><div class="flex items-center justify-between"><label class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-[16px]">person</span><span>Paciente</span></label><button class="text-primary hover:underline font-label-sm text-label-sm font-semibold inline-flex items-center gap-1" type="button"><span class="material-symbols-outlined text-[14px]">person_add</span><span>+ Novo Paciente</span></button></div><div class="p-space-sm rounded-xl border border-primary/40 bg-primary/5 flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm"><img alt="Lucas Gabriel Albuquerque Rocha" class="w-10 h-10 rounded-full object-cover shadow-sm flex-shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdzfp-oLwH023HOyXw_E6RyEjK7YVduVlKgz0JG160wQ0r1cIUSo39HJg84vM-dvY8ravEmMIWTPOpYWvZvqG5jOeTg-VnqR9j-LOAdK9PkLvg-GA3RUvykv7vAcuBL50d5eaz3z-P1bTCpZn1kJmJYC8CzU5lxvJgcH2S6x3NCHYnuvgcXtB5VQf-gPoEM7VZAY8otxuO6x5O-nTjJ7JCDfcBrKuFLedIVBFy8F7H"><div class="flex flex-col"><span class="font-label-lg text-label-lg text-on-surface font-bold">Lucas Gabriel Albuquerque Rocha</span><span class="font-label-sm text-label-sm text-on-surface-variant">CPF 342.***.***-19 • Prontuário #4092</span></div></div><div class="flex items-center gap-2"><button class="text-on-surface-variant hover:text-primary transition-colors p-1" title="Trocar paciente" type="button"><span class="material-symbols-outlined text-[18px]">swap_horiz</span></button></div></div></div><div class="flex flex-col gap-1.5"><label class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-[16px]">video_camera_front</span><span>Modalidade e Local de Atendimento</span></label><div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm"><label class="relative flex flex-col p-3 rounded-xl border-2 border-primary bg-primary/5 cursor-pointer shadow-sm"><div class="flex items-center justify-between mb-1"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">videocam</span><span class="font-label-md text-label-md text-on-surface font-bold">Telessaúde</span></div><input checked="" class="accent-[#005c55] w-4 h-4" name="modalidade" type="radio"></div><span class="font-label-sm text-[11px] text-on-surface-variant mt-1">Link seguro gerado e enviado ao paciente</span></label><label class="relative flex flex-col p-3 rounded-xl border border-outline-variant hover:border-primary/40 bg-surface-bright cursor-pointer transition-colors"><div class="flex items-center justify-between mb-1"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-on-surface-variant text-[20px]">apartment</span><span class="font-label-md text-label-md text-on-surface font-bold">Presencial</span></div><input class="accent-[#005c55] w-4 h-4" name="modalidade" type="radio"></div><span class="font-label-sm text-[11px] text-on-surface-variant mt-1">Recepção presencial e check-in físico</span></label></div></div><div class="flex flex-col gap-1.5"><label class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-[16px]">schedule</span><span>Data, Horário e Duração</span></label><div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm"><div><span class="font-label-sm text-[11px] text-on-surface-variant block mb-1 font-medium">Data da Consulta</span><div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/60 text-on-surface font-label-md text-label-md"><span class="material-symbols-outlined text-[18px] text-primary">calendar_today</span><span class="font-semibold">24/05/2024 (Hoje)</span></div></div><div><span class="font-label-sm text-[11px] text-on-surface-variant block mb-1 font-medium">Horário de Início</span><div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/60 text-on-surface font-label-md text-label-md"><span class="material-symbols-outlined text-[18px] text-primary">alarm</span><span class="font-bold">16:00</span></div></div><div><span class="font-label-sm text-[11px] text-on-surface-variant block mb-1 font-medium">Duração Prevista</span><div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/60 text-on-surface font-label-md text-label-md"><span class="material-symbols-outlined text-[18px] text-primary">timer</span><span>50 min (até 16:50)</span></div></div></div></div><div class="flex flex-col gap-1.5"><label class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-[16px]">psychology</span><span>Tipo de Sessão e Abordagem</span></label><div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-surface-bright border border-surface-container gap-2"><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold">Sessão Individual Ordinária</span><span class="font-body-sm text-body-sm text-on-surface-variant">Abordagem: Terapia Cognitivo-Comportamental (TCC) • Sessão #15</span></div><label class="inline-flex items-center gap-2 cursor-pointer self-start sm:self-center"><input checked="" class="accent-[#005c55] w-4 h-4 rounded" type="checkbox"><span class="font-label-sm text-label-sm text-on-surface font-medium">Repetir semanalmente</span></label></div></div><div class="flex flex-col gap-1.5"><label class="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-[16px]">payments</span><span>Parâmetros Financeiros &amp; Split Automático</span></label><div class="p-3.5 rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-2.5"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Honorário Clínico:</span><span class="font-headline-sm text-headline-sm text-primary font-bold">R$ 250,00</span></div><div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-[11px] font-semibold"><span class="material-symbols-outlined text-[14px] text-secondary">call_split</span><span>Split: R$ 175,00 (70% Profissional) | R$ 75,00 (30% Clínica)</span></div></div><div class="text-body-sm text-[12px] text-on-surface-variant flex items-center gap-1.5"><span class="material-symbols-outlined text-secondary text-[16px]">qr_code_2</span><span>Cobrança via Pix Automático com emissão de recibo dedutível (Carnê-Leão).</span></div><label class="flex items-center gap-2 pt-1 cursor-pointer"><input checked="" class="accent-[#005c55] w-4 h-4 rounded" type="checkbox"><span class="font-label-sm text-label-sm text-on-surface">Enviar lembrete e link via WhatsApp e E-mail com 24h de antecedência</span></label></div></div></div><div class="p-space-lg border-t border-surface-container bg-surface-bright flex flex-col sm:flex-row sm:items-center justify-between gap-space-md"><div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-[11px]"><span class="material-symbols-outlined text-primary text-[16px]">verified</span><span>Em conformidade com a Resolução CFP nº 11/2018 para Telessaúde.</span></div><div class="flex items-center gap-space-sm justify-end"><button class="px-space-md py-2.5 rounded-xl border border-outline-variant hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg transition-colors" type="button">Cancelar</button><button class="inline-flex items-center gap-space-xs px-space-lg py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg transition-colors shadow-md" type="button"><span class="material-symbols-outlined text-[20px]">check_circle</span><span>Confirmar e Agendar Consulta</span></button></div></div></div></div>
+
+</body></html>
